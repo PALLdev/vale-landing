@@ -63,8 +63,8 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="border-t border-gray-800 mt-8 pt-8 text-center">
           <p className="text-gray-400 flex items-center justify-center gap-2">
-            © {currentYear} NutriciónPro. Hecho con{" "}
-            <Heart className="w-4 h-4 text-red-400 fill-current" /> por PALLdev
+            © {currentYear} NutriciónPro. By PALLdev
+            <Heart className="w-4 h-4 text-red-400 fill-current" />
           </p>
         </div>
       </div>
