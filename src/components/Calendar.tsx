@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import {
   format,
   startOfMonth,
@@ -12,6 +12,7 @@ import {
   addMonths,
   subMonths,
   isToday,
+  min,
 } from "date-fns";
 import { es } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -68,8 +69,8 @@ const initialAppointments: Appointment[] = [
   },
   {
     id: "2",
-    date: new Date(2025, 7, 10, 10, 30), // Agosto 10, 2025, 10:30 AM
-    time: "10:30",
+    date: new Date(2025, 7, 10, 10, 0), // Agosto 10, 2025, 10:00 AM
+    time: "10:00",
     clientName: "Pedro Ruiz",
     clientEmail: "pedro.r@example.com",
     clientPhone: "912345678",
@@ -95,6 +96,8 @@ export function CalendarSystem() {
   const [appointments, setAppointments] =
     useState<Appointment[]>(initialAppointments);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+
+  const sidePanelRef = useRef<HTMLDivElement>(null);
 
   // Formulario de reserva
   const [clientName, setClientName] = useState("");
@@ -130,6 +133,14 @@ export function CalendarSystem() {
   }, []);
 
   const handleDateSelect = useCallback((date: Date) => {
+    // Scroll al panel lateral si existe
+    if (sidePanelRef.current) {
+      sidePanelRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+
     if (isPast(date) && !isToday(date)) {
       toast.error("Fecha no disponible", {
         description: "No puedes seleccionar fechas pasadas.",
@@ -142,6 +153,13 @@ export function CalendarSystem() {
 
   const handleTimeSelect = useCallback((time: string) => {
     setSelectedTime(time);
+    // Scroll al panel lateral por si movio el scroll
+    if (sidePanelRef.current) {
+      sidePanelRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
   }, []);
 
   const generateTimeSlots = useCallback(
@@ -152,30 +170,60 @@ export function CalendarSystem() {
       const now = new Date();
       const isSelectedDateToday = isSameDay(date, now);
 
-      for (let hour = 9; hour <= 17; hour++) {
-        for (let minute = 0; minute < 60; minute += 30) {
-          const slotTime = `${String(hour).padStart(2, "0")}:${String(
-            minute
-          ).padStart(2, "0")}`;
-          const slotDate = new Date(
-            date.getFullYear(),
-            date.getMonth(),
-            date.getDate(),
-            hour,
-            minute
-          );
-
-          const isOccupied = appointments.some(
-            (appt) => isSameDay(appt.date, date) && appt.time === slotTime
-          );
-
-          const isPastTime = isSelectedDateToday && slotDate < now;
-
-          slots.push({
-            time: slotTime,
-            isAvailable: !isOccupied && !isPastTime,
-          });
+      for (let hour = 9; hour <= 18; hour++) {
+        // Excluir la hora de descanso (13:00 a 14:00)
+        if (hour === 13) {
+          continue;
         }
+
+        // horas con intervalos de cada hora
+        const minute = 0;
+        const slotTime = `${String(hour).padStart(2, "0")}:${String(
+          minute
+        ).padStart(2, "0")}`;
+        const slotDate = new Date(
+          date.getFullYear(),
+          date.getMonth(),
+          date.getDate(),
+          hour,
+          minute
+        );
+
+        const isOccupied = appointments.some(
+          (appt) => isSameDay(appt.date, date) && appt.time === slotTime
+        );
+
+        const isPastTime = isSelectedDateToday && slotDate < now;
+
+        slots.push({
+          time: slotTime,
+          isAvailable: !isOccupied && !isPastTime,
+        });
+
+        // horas con intervalos de cada 30 minutos
+        // for (let minute = 0; minute < 60; minute += 30) {
+        //   const slotTime = `${String(hour).padStart(2, "0")}:${String(
+        //     minute
+        //   ).padStart(2, "0")}`;
+        //   const slotDate = new Date(
+        //     date.getFullYear(),
+        //     date.getMonth(),
+        //     date.getDate(),
+        //     hour,
+        //     minute
+        //   );
+
+        //   const isOccupied = appointments.some(
+        //     (appt) => isSameDay(appt.date, date) && appt.time === slotTime
+        //   );
+
+        //   const isPastTime = isSelectedDateToday && slotDate < now;
+
+        //   slots.push({
+        //     time: slotTime,
+        //     isAvailable: !isOccupied && !isPastTime,
+        //   });
+        // }
       }
       return slots;
     },
@@ -297,13 +345,13 @@ export function CalendarSystem() {
           {/* Navegación del Mes */}
           <div className="flex items-center justify-between mb-6">
             <Button variant="ghost" size="icon" onClick={handlePrevMonth}>
-              <ChevronLeft className="h-5 w-5 text-prim" />
+              <ChevronLeft className="size-6 md:size-8 text-prim" />
             </Button>
             <h3 className="text-xl font-semibold text-gray-900">
               {formatedDate.charAt(0).toUpperCase() + formatedDate.slice(1)}
             </h3>
             <Button variant="ghost" size="icon" onClick={handleNextMonth}>
-              <ChevronRight className="h-5 w-5 text-prim" />
+              <ChevronRight className="size-6 md:size-8 text-prim" />
             </Button>
           </div>
 
@@ -377,7 +425,7 @@ export function CalendarSystem() {
       </Card>
 
       {/* Columna del Panel Lateral (Horarios O Formulario) */}
-      <div className="space-y-8">
+      <div className="space-y-8 scroll-mt-20" ref={sidePanelRef}>
         {/* Condicional: Mostrar Horarios o Formulario */}
         {!selectedDate ? (
           <Card className="shadow-lg border-prim-very-lighter flex items-center justify-center min-h-[200px]">
@@ -396,12 +444,11 @@ export function CalendarSystem() {
                 <Clock className="h-5 w-5 text-prim" />
                 Horarios Disponibles
               </CardTitle>
-              <p className="text-gray-600 text-sm">
+              <p className="text-gray-600 text-sm pt-1">
                 Selecciona una hora para el{" "}
                 <span className="font-semibold text-prim-dark">
                   {format(selectedDate, "dd MMMM yyyy", { locale: es })}
                 </span>
-                :
               </p>
             </CardHeader>
             <CardContent>
@@ -452,7 +499,7 @@ export function CalendarSystem() {
                   onClick={() => setSelectedTime(null)}
                   className="text-prim hover:text-purple-800"
                 >
-                  <ArrowLeft className="h-4 w-4 mr-1" /> Volver
+                  <ArrowLeft className="h-4 w-4 mr-[-.3rem]" /> Volver
                 </Button>
               </div>
               <p className="text-gray-600 text-sm">
