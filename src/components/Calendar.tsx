@@ -34,7 +34,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
-// import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 // --- Tipos de Datos ---
 interface Appointment {
@@ -129,21 +129,16 @@ export function CalendarSystem() {
     setSelectedTime(null);
   }, []);
 
-  const handleDateSelect = useCallback(
-    (date: Date) => {
-      if (isPast(date) && !isToday(date)) {
-        // toast({
-        //   title: "Fecha no disponible",
-        //   description: "No puedes seleccionar fechas pasadas.",
-        //   variant: "destructive",
-        // });
-        // return;
-      }
-      setSelectedDate(date);
-      setSelectedTime(null); // Reset selected time when date changes
-    },
-    [] // [toast]
-  );
+  const handleDateSelect = useCallback((date: Date) => {
+    if (isPast(date) && !isToday(date)) {
+      toast.error("Fecha no disponible", {
+        description: "No puedes seleccionar fechas pasadas.",
+      });
+      return;
+    }
+    setSelectedDate(date);
+    setSelectedTime(null); // Reset selected time when date changes
+  }, []);
 
   const handleTimeSelect = useCallback((time: string) => {
     setSelectedTime(time);
@@ -220,21 +215,17 @@ export function CalendarSystem() {
     (e: React.FormEvent) => {
       e.preventDefault();
       if (!validateForm()) {
-        // toast({
-        //   title: "Error de validación",
-        //   description: "Por favor, completa todos los campos obligatorios.",
-        //   variant: "destructive",
-        // });
+        toast.error("Error de validación", {
+          description: "Por favor, completa todos los campos obligatorios.",
+        });
         return;
       }
 
       if (!selectedDate || !selectedTime) {
-        // toast({
-        //   title: "Error",
-        //   description:
-        //     "Fecha u hora no seleccionada. Por favor, selecciona una fecha y hora.",
-        //   variant: "destructive",
-        // });
+        toast.error("Error", {
+          description:
+            "Fecha u hora no seleccionada. Por favor, selecciona una fecha y hora.",
+        });
         return;
       }
 
@@ -257,13 +248,11 @@ export function CalendarSystem() {
       };
 
       setAppointments((prev) => [...prev, newAppointment]);
-      //   toast({
-      //     title: "Cita Agendada con Éxito",
-      //     description: `Tu cita para el ${format(selectedDate, "dd/MM/yyyy", {
-      //       locale: es,
-      //     })} a las ${selectedTime} ha sido agendada. Recibirás un email de confirmación.`,
-      //     variant: "default",
-      //   });
+      toast.success("Cita Agendada con Éxito", {
+        description: `Tu cita para el ${format(selectedDate, "dd/MM/yyyy", {
+          locale: es,
+        })} a las ${selectedTime} ha sido agendada. Recibirás un email de confirmación.`,
+      });
 
       // Reset form
       setClientName("");
@@ -285,7 +274,6 @@ export function CalendarSystem() {
       consultationType,
       notes,
       appointments.length,
-      //   toast,
     ]
   );
 
@@ -296,12 +284,12 @@ export function CalendarSystem() {
   return (
     <div className="grid lg:grid-cols-[2fr_1fr] gap-8">
       {/* Columna Principal del Calendario */}
-      <Card className="shadow-lg border-purple-100 h-[600px]">
+      <Card className="shadow-lg border-prim-very-lighter h-[635px]">
         {" "}
         {/* Altura fija para el calendario */}
         <CardHeader className="pb-4">
           <CardTitle className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
-            <CalendarIcon className="h-6 w-6 text-purple-600" />
+            <CalendarIcon className="h-6 w-6 text-prim" />
             Selecciona tu Fecha
           </CardTitle>
         </CardHeader>
@@ -309,13 +297,13 @@ export function CalendarSystem() {
           {/* Navegación del Mes */}
           <div className="flex items-center justify-between mb-6">
             <Button variant="ghost" size="icon" onClick={handlePrevMonth}>
-              <ChevronLeft className="h-5 w-5 text-purple-600" />
+              <ChevronLeft className="h-5 w-5 text-prim" />
             </Button>
             <h3 className="text-xl font-semibold text-gray-900">
               {formatedDate.charAt(0).toUpperCase() + formatedDate.slice(1)}
             </h3>
             <Button variant="ghost" size="icon" onClick={handleNextMonth}>
-              <ChevronRight className="h-5 w-5 text-purple-600" />
+              <ChevronRight className="h-5 w-5 text-prim" />
             </Button>
           </div>
 
@@ -348,12 +336,12 @@ export function CalendarSystem() {
                   }
                   ${
                     isSelected
-                      ? "bg-purple-600 text-white hover:bg-purple-700 shadow-md"
+                      ? "bg-prim text-white hover:bg-prim-dark shadow-md"
                       : ""
                   }
                   ${
                     isCurrentDay && !isSelected
-                      ? "border-2 border-purple-400 text-purple-700 font-semibold"
+                      ? "border-2 border-prim-lighter text-prim-dark font-semibold"
                       : ""
                   }
                 `}
@@ -373,11 +361,11 @@ export function CalendarSystem() {
           {/* Leyenda del Calendario */}
           <div className="mt-8 pt-4 border-t border-gray-100 text-sm text-gray-600 flex flex-wrap justify-center gap-x-6 gap-y-2">
             <div className="flex items-center gap-2">
-              <span className="w-4 h-4 bg-purple-600 rounded-lg"></span>
+              <span className="w-4 h-4 bg-prim rounded-lg"></span>
               <span>Día seleccionado</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="w-4 h-4 border-2 border-purple-400 rounded-lg"></span>
+              <span className="w-4 h-4 border-2 border-prim-lighter rounded-lg"></span>
               <span>Día actual</span>
             </div>
             <div className="flex items-center gap-2">
@@ -392,9 +380,9 @@ export function CalendarSystem() {
       <div className="space-y-8">
         {/* Condicional: Mostrar Horarios o Formulario */}
         {!selectedDate ? (
-          <Card className="shadow-lg border-purple-100 flex items-center justify-center min-h-[200px]">
+          <Card className="shadow-lg border-prim-very-lighter flex items-center justify-center min-h-[200px]">
             <CardContent className="text-center py-12">
-              <CalendarIcon className="h-12 w-12 text-purple-400 mx-auto mb-4" />
+              <CalendarIcon className="h-12 w-12 text-prim-lighter mx-auto mb-4" />
               <p className="text-gray-500 text-lg font-medium">
                 Selecciona una fecha en el calendario para ver los horarios
                 disponibles.
@@ -402,15 +390,15 @@ export function CalendarSystem() {
             </CardContent>
           </Card>
         ) : !selectedTime ? (
-          <Card className="shadow-lg border-purple-100">
+          <Card className="shadow-lg border-prim-very-lighter">
             <CardHeader>
               <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Clock className="h-5 w-5 text-purple-600" />
+                <Clock className="h-5 w-5 text-prim" />
                 Horarios Disponibles
               </CardTitle>
               <p className="text-gray-600 text-sm">
                 Selecciona una hora para el{" "}
-                <span className="font-semibold text-purple-700">
+                <span className="font-semibold text-prim-dark">
                   {format(selectedDate, "dd MMMM yyyy", { locale: es })}
                 </span>
                 :
@@ -429,8 +417,8 @@ export function CalendarSystem() {
                       ${
                         slot.isAvailable
                           ? selectedTime === slot.time
-                            ? "bg-purple-600 text-white hover:bg-purple-700 shadow-md"
-                            : "border-purple-300 text-purple-700 hover:bg-purple-100"
+                            ? "bg-prim text-white hover:bg-prim-dark shadow-md"
+                            : "border-purple-300 text-prim-dark hover:bg-prim-very-lighter"
                           : "bg-gray-100 text-gray-400 cursor-not-allowed opacity-70"
                       }`}
                       onClick={() =>
@@ -451,29 +439,29 @@ export function CalendarSystem() {
             </CardContent>
           </Card>
         ) : (
-          <Card className="shadow-lg border-purple-100">
+          <Card className="shadow-lg border-prim-very-lighter">
             <CardHeader>
               <div className="flex items-center justify-between mb-2">
                 <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                  <User className="h-5 w-5 text-purple-600" />
+                  <User className="h-5 w-5 text-prim" />
                   Confirma tu Cita
                 </CardTitle>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setSelectedTime(null)}
-                  className="text-purple-600 hover:text-purple-800"
+                  className="text-prim hover:text-purple-800"
                 >
                   <ArrowLeft className="h-4 w-4 mr-1" /> Volver
                 </Button>
               </div>
               <p className="text-gray-600 text-sm">
                 Completa tus datos para agendar tu cita el{" "}
-                <span className="font-semibold text-purple-700">
+                <span className="font-semibold text-prim-dark">
                   {format(selectedDate, "dd MMMM yyyy", { locale: es })}
                 </span>{" "}
                 a las{" "}
-                <span className="font-semibold text-purple-700">
+                <span className="font-semibold text-prim-dark">
                   {selectedTime}
                 </span>
                 .
@@ -591,7 +579,7 @@ export function CalendarSystem() {
 
                 <Button
                   type="submit"
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3"
+                  className="w-full bg-prim hover:bg-prim-dark text-white font-semibold py-3"
                   disabled={Object.keys(formErrors).length > 0}
                 >
                   Confirmar Cita

@@ -9,6 +9,7 @@
   --color-prim-dark: oklch(49.6% 0.265 301.924); /* purple-700 */
   --color-prim-darker: oklch(38.1% 0.176 304.987); /* purple-900 */
   --color-prim-lighter: oklch(71.4% 0.203 305.504); /* purple-400 */
+  --color-prim-very-lighter: oklch(94.6% 0.033 307.174); /* purple-100 */
 
   /* shadcn variables */
   --color-background: var(--background);
