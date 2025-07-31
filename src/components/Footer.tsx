@@ -10,7 +10,7 @@ export function Footer() {
           {/* Brand */}
           <div className="space-y-4">
             <h3 className="text-2xl font-bold">
-              Nutrición<span className="text-purple-400">Pro</span>
+              Nutrición<span className="text-prim-lighter">Pro</span>
             </h3>
             <p className="text-gray-400 leading-relaxed">
               Transformando vidas a través de una nutrición personalizada y
@@ -24,25 +24,25 @@ export function Footer() {
             <nav className="flex flex-col space-y-2">
               <a
                 href="#inicio"
-                className="text-gray-400 hover:text-purple-400 transition-colors"
+                className="text-gray-400 hover:text-prim-lighter transition-colors"
               >
                 Inicio
               </a>
               <a
                 href="#servicios"
-                className="text-gray-400 hover:text-purple-400 transition-colors"
+                className="text-gray-400 hover:text-prim-lighter transition-colors"
               >
                 Servicios
               </a>
               <a
                 href="#sobre-mi"
-                className="text-gray-400 hover:text-purple-400 transition-colors"
+                className="text-gray-400 hover:text-prim-lighter transition-colors"
               >
                 Sobre Mí
               </a>
               <a
                 href="#contacto"
-                className="text-gray-400 hover:text-purple-400 transition-colors"
+                className="text-gray-400 hover:text-prim-lighter transition-colors"
               >
                 Contacto
               </a>
@@ -53,9 +53,9 @@ export function Footer() {
           <div className="space-y-4">
             <h4 className="text-lg font-semibold">Contacto</h4>
             <div className="space-y-2 text-gray-400">
-              <p>maria@nutricionpro.cl</p>
+              <p>valeska@nutricionpro.cl</p>
               <p>+56 9 1234 5678</p>
-              <p>Santiago, Chile</p>
+              <p>Concepción, Chile</p>
             </div>
           </div>
         </div>

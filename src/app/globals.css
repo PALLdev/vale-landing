@@ -4,6 +4,13 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* my variables */
+  --color-prim: oklch(55.8% 0.288 302.321); /* purple-600 */
+  --color-prim-dark: oklch(49.6% 0.265 301.924); /* purple-700 */
+  --color-prim-darker: oklch(38.1% 0.176 304.987); /* purple-900 */
+  --color-prim-lighter: oklch(71.4% 0.203 305.504); /* purple-400 */
+
+  /* shadcn variables */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
