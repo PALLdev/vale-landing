@@ -17,7 +17,7 @@ import {
 import { es } from "date-fns/locale"
 import { toast } from "sonner"
 import type { Appointment } from "@/types/calendar"
-import { generateTimeSlots } from "@/lib/calendar-helpers"
+import { generateTimeSlots, isDayFullyBooked } from "@/lib/calendar-helpers"
 import { addAppointment, getAppointments } from "@/actions/appointments"
 import { appointmentSchema } from "@/schemas/appointment"
 import { ZodError } from "zod"
@@ -36,7 +36,6 @@ export function useCalendarLogic() {
     const [clientPhone, setClientPhone] = useState("")
     const [consultationType, setConsultationType] = useState<"ingreso" | "seguimiento" | "">("")
     const [notes, setNotes] = useState("")
-    // CAMBIO AQUÍ: Actualizar el tipo de formErrors para que sea un objeto con arrays de strings
     const [formErrors, setFormErrors] = useState<{ [key: string]: string[] | undefined }>({})
 
     // Cargar citas al montar el componente
@@ -65,9 +64,11 @@ export function useCalendarLogic() {
     }, [currentMonth])
 
     const firstDayOfMonth = startOfMonth(currentMonth)
-    const startingDayIndex = firstDayOfMonth.getDay() // 0 for Sunday, 1 for Monday...
+    // Calcular el índice del primer día de la semana (Lunes = 0)
+    const startingDayIndex = (firstDayOfMonth.getDay() - 1 + 7) % 7
 
-    const daysOfWeek = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"]
+    // Reordenar los días de la semana para que empiecen en Lunes
+    const daysOfWeek = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
 
     const handlePrevMonth = useCallback(() => {
         setCurrentMonth((prev) => subMonths(prev, 1))
@@ -81,16 +82,29 @@ export function useCalendarLogic() {
         setSelectedTime(null)
     }, [])
 
-    const handleDateSelect = useCallback((date: Date) => {
-        if (isPast(date) && !isToday(date)) {
-            toast.error("Fecha no disponible", {
-                description: "No puedes seleccionar fechas pasadas.",
-            })
-            return
-        }
-        setSelectedDate(date)
-        setSelectedTime(null) // Reset selected time when date changes
-    }, [])
+    const handleDateSelect = useCallback(
+        (date: Date) => {
+            // Check if it's a Sunday
+            if (date.getDay() === 0) {
+                // Sunday is 0
+                toast.error("Día no disponible", {
+                    description: "Los domingos no hay atención.",
+                })
+                return
+            }
+            // Only impede selection if it's a past day (and not today)
+            if (isPast(date) && !isToday(date)) {
+                toast.error("Fecha no disponible", {
+                    description: "No puedes seleccionar fechas pasadas.",
+                })
+                return
+            }
+            // Si el día está completamente agendado, se puede seleccionar, pero el panel de horarios mostrará que no hay disponibilidad.
+            setSelectedDate(date)
+            setSelectedTime(null) // Reset selected time when date changes
+        },
+        [], // No depende de appointments aquí, ya que isDayFullyBooked no impide la selección
+    )
 
     const handleTimeSelect = useCallback((time: string) => {
         setSelectedTime(time)
@@ -117,8 +131,6 @@ export function useCalendarLogic() {
         } catch (error) {
             if (error instanceof ZodError) {
                 const errors = error.flatten().fieldErrors
-                // Zod.flatten().fieldErrors ya devuelve {[key: string]: string[]},
-                // por lo que no necesitamos castear a 'string'
                 setFormErrors(errors)
                 toast.error("Error de validación", {
                     description: "Por favor, revisa los campos marcados en rojo.",
@@ -191,7 +203,6 @@ export function useCalendarLogic() {
             } else {
                 // Manejar errores de validación del servidor
                 if (response.errors) {
-                    // Los errores del servidor ya vienen como {[key: string]: string[]}
                     setFormErrors(response.errors as { [key: string]: string[] | undefined })
                     toast.error("Error de validación", {
                         description: response.message || "Por favor, revisa los campos marcados en rojo.",
@@ -252,5 +263,6 @@ export function useCalendarLogic() {
         isSameDay,
         format,
         es,
+        isDayFullyBooked,
     }
 }

@@ -38,3 +38,18 @@ export function generateTimeSlots(date: Date | null, appointments: Appointment[]
     }
     return slots
 }
+
+/**
+ * Verifica si todos los horarios *potenciales* de un día específico están completamente reservados.
+ * Esta función NO considera si el día es pasado, solo si los slots generados están ocupados.
+ *
+ * @param date El día a verificar.
+ * @param allAppointments Todas las citas existentes.
+ * @returns True si todos los horarios están reservados, false en caso contrario.
+ */
+export function isDayFullyBooked(date: Date, allAppointments: Appointment[]): boolean {
+    const slotsForDay = generateTimeSlots(date, allAppointments)
+    // Un día está completamente reservado si genera slots y todos ellos no están disponibles.
+    // Si no hay slots generados (ej. fuera de horario laboral), también se considera "sin horarios".
+    return slotsForDay.length > 0 && slotsForDay.every((slot) => !slot.isAvailable)
+}

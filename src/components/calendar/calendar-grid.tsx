@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react";
 import type { Locale } from "date-fns";
+import { isSameMonth } from "date-fns";
 
 interface CalendarGridProps {
   currentMonth: Date;
@@ -22,6 +23,8 @@ interface CalendarGridProps {
     options?: { locale?: Locale }
   ) => string;
   es: Locale;
+  isDayFullyBooked: (date: Date, allAppointments: any[]) => boolean;
+  appointments: any[];
 }
 
 export function CalendarGrid({
@@ -38,7 +41,11 @@ export function CalendarGrid({
   isSameDay,
   format,
   es,
+  isDayFullyBooked,
+  appointments,
 }: CalendarGridProps) {
+  const today = new Date();
+
   return (
     <Card className="shadow-lg border-purple-100 h-[650px]">
       <CardHeader className="pb-4">
@@ -50,11 +57,15 @@ export function CalendarGrid({
       <CardContent>
         {/* Navegación del Mes */}
         <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" size="icon" onClick={handlePrevMonth}>
-            <ChevronLeft className="h-5 w-5 text-purple-600" />
-          </Button>
+          {/* Ocultar el botón de mes anterior si es el mes actual */}
+          {!isSameMonth(currentMonth, today) && (
+            <Button variant="ghost" size="icon" onClick={handlePrevMonth}>
+              <ChevronLeft className="h-5 w-5 text-purple-600" />
+            </Button>
+          )}
+          {/* Espaciador para centrar el título si el botón está oculto */}
+          {isSameMonth(currentMonth, today) && <div className="w-10"></div>}
           <h3 className="text-xl font-semibold text-gray-900 capitalize">
-            {" "}
             {format(currentMonth, "MMMM yyyy", { locale: es })}
           </h3>
           <Button variant="ghost" size="icon" onClick={handleNextMonth}>
@@ -75,39 +86,42 @@ export function CalendarGrid({
             <div key={`empty-${i}`} className="h-12"></div>
           ))}
           {daysInMonth.map((day, index) => {
-            const isDisabled = isPast(day) && !isToday(day);
+            const isPastDay = isPast(day) && !isToday(day);
+            const isSunday = day.getDay() === 0; // Sunday is 0
+            const isFullyBookedDay = isDayFullyBooked(day, appointments);
+            const isDisabled = isPastDay || isSunday; // A day is disabled if it's past or a Sunday
             const isSelected = selectedDate && isSameDay(day, selectedDate);
             const isCurrentDay = isToday(day);
+
+            let dayButtonClasses = `h-12 w-full flex flex-col items-center justify-center relative rounded-lg transition-all duration-200`;
+            let dayNumberClasses = ``;
+
+            if (isSelected) {
+              dayButtonClasses += ` bg-purple-600 hover:bg-purple-700 shadow-md`;
+              dayNumberClasses += ` text-white`;
+            } else if (isDisabled) {
+              dayButtonClasses += ` cursor-not-allowed opacity-60 bg-gray-100`;
+              dayNumberClasses += ` text-gray-400`; // Text color for disabled days
+            } else if (isFullyBookedDay) {
+              dayButtonClasses += ` bg-red-100 hover:bg-red-200`;
+              dayNumberClasses += ` text-gray-900`; // Text color for fully booked days (black)
+            } else if (isCurrentDay) {
+              dayButtonClasses += ` border-2 border-purple-400 hover:bg-purple-50`;
+              dayNumberClasses += ` text-purple-700 font-semibold`; // Text color for current day
+            } else {
+              dayButtonClasses += ` hover:bg-purple-50`;
+              dayNumberClasses += ` text-gray-900`; // Default text color for available days (black)
+            }
 
             return (
               <Button
                 key={index}
                 variant="ghost"
-                className={`h-12 w-full flex flex-col items-center justify-center relative rounded-lg transition-all duration-200
-                ${
-                  isDisabled
-                    ? "text-gray-400 cursor-not-allowed opacity-60"
-                    : "hover:bg-purple-50"
-                }
-                ${
-                  isSelected
-                    ? "bg-purple-600 text-white hover:bg-purple-700 shadow-md"
-                    : ""
-                }
-                ${
-                  isCurrentDay && !isSelected
-                    ? "border-2 border-purple-400 text-purple-700 font-semibold"
-                    : ""
-                }
-              `}
+                className={dayButtonClasses}
                 onClick={() => handleDateSelect(day)}
                 disabled={isDisabled}
               >
-                <span
-                  className={`${isSelected ? "text-white" : "text-gray-900"}`}
-                >
-                  {format(day, "d")}
-                </span>
+                <span className={dayNumberClasses}>{format(day, "d")}</span>
               </Button>
             );
           })}
@@ -116,15 +130,19 @@ export function CalendarGrid({
         {/* Leyenda del Calendario */}
         <div className="mt-8 pt-4 border-t border-gray-100 text-sm text-gray-600 flex flex-wrap justify-center gap-x-6 gap-y-2">
           <div className="flex items-center gap-2">
-            <span className="w-4 h-4 bg-purple-600 rounded-lg"></span>
-            <span>Día seleccionado</span>
-          </div>
-          <div className="flex items-center gap-2">
             <span className="w-4 h-4 border-2 border-purple-400 rounded-lg"></span>
             <span>Día actual</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-4 h-4 bg-gray-400 rounded-lg opacity-60"></span>
+            <span className="w-4 h-4 bg-purple-600 rounded-lg"></span>
+            <span>Día seleccionado</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-4 h-4 bg-red-100 rounded-lg opacity-60"></span>
+            <span>Día sin horarios</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-4 h-4 bg-gray-100 rounded-lg opacity-60"></span>
             <span>Día no disponible</span>
           </div>
         </div>

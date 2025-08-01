@@ -40,6 +40,8 @@ export function CalendarSystem() {
     isSameDay,
     format,
     es,
+    isDayFullyBooked,
+    appointments,
   } = useCalendarLogic();
 
   // Referencia para el panel lateral
@@ -62,7 +64,8 @@ export function CalendarSystem() {
         <Loader2 className="h-10 w-10 animate-spin mr-2" />
         <span className="text-xl font-semibold">
           Cargando horarios disponibles...
-        </span>
+        </span>{" "}
+        {/* Modificado aquí */}
       </div>
     );
   }
@@ -84,6 +87,8 @@ export function CalendarSystem() {
         isSameDay={isSameDay}
         format={format}
         es={es}
+        isDayFullyBooked={isDayFullyBooked}
+        appointments={appointments}
       />
 
       {/* Columna del Panel Lateral (Horarios O Formulario) */}
