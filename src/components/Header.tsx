@@ -12,9 +12,7 @@ export function Header() {
 
   // Añadir useEffect para cerrar el menú cuando la ruta cambia
   useEffect(() => {
-    if (isMenuOpen) {
-      setIsMenuOpen(false);
-    }
+    setIsMenuOpen(false);
   }, [pathname]);
 
   const navItems = [
