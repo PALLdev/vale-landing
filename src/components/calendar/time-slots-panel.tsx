@@ -40,19 +40,29 @@ export function TimeSlotsPanel({
     );
   }
 
+  // Determinar si todos los slots están no disponibles
+  const allSlotsUnavailable = availableTimeSlots.every(
+    (slot) => !slot.isAvailable
+  );
+
   return (
     <Card className="shadow-lg border-purple-100">
       <CardHeader>
         <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
           <Clock className="h-5 w-5 text-purple-600" />
-          Horarios Disponibles
+          {allSlotsUnavailable
+            ? "No hay Horarios Disponibles"
+            : "Horarios Disponibles"}{" "}
+          {/* Título dinámico */}
         </CardTitle>
-        <p className="text-gray-600 text-sm">
-          Selecciona una hora para el{" "}
+        <p className="text-gray-700 text-sm">
+          {allSlotsUnavailable
+            ? `No quedan horas para el ` // Texto dinámico
+            : `Selecciona una hora para el `}
           <span className="font-semibold text-purple-700">
             {format(selectedDate, "dd MMMM yyyy", { locale: es })}
           </span>
-          :
+          {/* Eliminada la puntuación final */}
         </p>
       </CardHeader>
       <CardContent>
