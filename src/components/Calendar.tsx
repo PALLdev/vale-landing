@@ -4,6 +4,7 @@ import { useCalendarLogic } from "@/hooks/use-calendar-logic";
 import { CalendarGrid } from "@/components/calendar/calendar-grid";
 import { TimeSlotsPanel } from "@/components/calendar/time-slots-panel";
 import { AppointmentForm } from "@/components/calendar/appointment-form";
+import { Loader2 } from "lucide-react";
 
 export function CalendarSystem() {
   const {
@@ -20,6 +21,8 @@ export function CalendarSystem() {
     startingDayIndex,
     daysOfWeek,
     availableTimeSlots,
+    isLoadingAppointments,
+    isBooking,
     handlePrevMonth,
     handleNextMonth,
     handleDateSelect,
@@ -31,6 +34,7 @@ export function CalendarSystem() {
     setClientPhone,
     setConsultationType,
     setNotes,
+    setFormErrors,
     isPast,
     isToday,
     isSameDay,
@@ -52,6 +56,17 @@ export function CalendarSystem() {
     }
   };
 
+  if (isLoadingAppointments) {
+    return (
+      <div className="flex justify-center items-center h-[650px] text-purple-600">
+        <Loader2 className="h-10 w-10 animate-spin mr-2" />
+        <span className="text-xl font-semibold">
+          Cargando horarios disponibles...
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div className="grid lg:grid-cols-[2fr_1fr] gap-8">
       {/* Columna Principal del Calendario */}
@@ -63,7 +78,7 @@ export function CalendarSystem() {
         daysOfWeek={daysOfWeek}
         handlePrevMonth={handlePrevMonth}
         handleNextMonth={handleNextMonth}
-        handleDateSelect={handleDateSelectAndScroll} // Usar la función modificada
+        handleDateSelect={handleDateSelectAndScroll}
         isPast={isPast}
         isToday={isToday}
         isSameDay={isSameDay}
@@ -100,6 +115,8 @@ export function CalendarSystem() {
             handleBookAppointment={handleBookAppointment}
             setSelectedTime={setSelectedTime}
             format={format}
+            isBooking={isBooking}
+            setFormErrors={setFormErrors}
           />
         )}
       </div>

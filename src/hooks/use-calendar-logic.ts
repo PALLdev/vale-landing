@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
 import {
     format,
     startOfMonth,
@@ -18,46 +18,17 @@ import { es } from "date-fns/locale"
 import { toast } from "sonner"
 import type { Appointment } from "@/types/calendar"
 import { generateTimeSlots } from "@/lib/calendar-helpers"
-
-// Datos de Ejemplo (para demostración)
-const initialAppointments: Appointment[] = [
-    {
-        id: "1",
-        date: new Date(2025, 7, 10, 9, 0), // Agosto 10, 2025, 9:00 AM
-        time: "09:00",
-        clientName: "Ana Torres",
-        clientEmail: "ana.t@example.com",
-        clientPhone: "987654321",
-        consultationType: "ingreso",
-        status: "confirmada",
-    },
-    {
-        id: "2",
-        date: new Date(2025, 7, 10, 10, 30), // Agosto 10, 2025, 10:30 AM
-        time: "10:30",
-        clientName: "Pedro Ruiz",
-        clientEmail: "pedro.r@example.com",
-        clientPhone: "912345678",
-        consultationType: "seguimiento",
-        status: "pendiente",
-    },
-    {
-        id: "3",
-        date: new Date(2025, 7, 15, 14, 0), // Agosto 15, 2025, 2:00 PM
-        time: "14:00",
-        clientName: "Laura Gómez",
-        clientEmail: "laura.g@example.com",
-        clientPhone: "955554444",
-        consultationType: "ingreso",
-        status: "confirmada",
-    },
-]
+import { addAppointment, getAppointments } from "@/actions/appointments"
+import { appointmentSchema } from "@/schemas/appointment"
+import { ZodError } from "zod"
 
 export function useCalendarLogic() {
     const [currentMonth, setCurrentMonth] = useState(new Date())
     const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-    const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments)
+    const [appointments, setAppointments] = useState<Appointment[]>([])
     const [selectedTime, setSelectedTime] = useState<string | null>(null)
+    const [isLoadingAppointments, setIsLoadingAppointments] = useState(true)
+    const [isBooking, setIsBooking] = useState(false)
 
     // Formulario de reserva
     const [clientName, setClientName] = useState("")
@@ -65,7 +36,27 @@ export function useCalendarLogic() {
     const [clientPhone, setClientPhone] = useState("")
     const [consultationType, setConsultationType] = useState<"ingreso" | "seguimiento" | "">("")
     const [notes, setNotes] = useState("")
-    const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({})
+    // CAMBIO AQUÍ: Actualizar el tipo de formErrors para que sea un objeto con arrays de strings
+    const [formErrors, setFormErrors] = useState<{ [key: string]: string[] | undefined }>({})
+
+    // Cargar citas al montar el componente
+    useEffect(() => {
+        const loadAppointments = async () => {
+            setIsLoadingAppointments(true)
+            try {
+                const fetchedAppointments = await getAppointments()
+                setAppointments(fetchedAppointments as Appointment[])
+            } catch (error) {
+                console.error("Error loading appointments:", error)
+                toast.error("Error al cargar citas", {
+                    description: "No se pudieron cargar las citas existentes. Intenta de nuevo más tarde.",
+                })
+            } finally {
+                setIsLoadingAppointments(false)
+            }
+        }
+        loadAppointments()
+    }, [])
 
     const daysInMonth = useMemo(() => {
         const start = startOfMonth(currentMonth)
@@ -107,28 +98,46 @@ export function useCalendarLogic() {
 
     const availableTimeSlots = useMemo(() => generateTimeSlots(selectedDate, appointments), [selectedDate, appointments])
 
+    // Validación del formulario en el cliente usando Zod
     const validateForm = useCallback(() => {
-        const errors: { [key: string]: string } = {}
-        if (!clientName.trim()) errors.clientName = "El nombre es obligatorio."
-        if (!clientEmail.trim()) errors.clientEmail = "El email es obligatorio."
-        else if (!/\S+@\S+\.\S+/.test(clientEmail)) errors.clientEmail = "Formato de email inválido."
-        if (!clientPhone.trim()) errors.clientPhone = "El teléfono es obligatorio."
-        else if (!/^\d{9,}$/.test(clientPhone)) errors.clientPhone = "Formato de teléfono inválido (mínimo 9 dígitos)."
-        if (!consultationType) errors.consultationType = "El tipo de consulta es obligatorio."
-        if (!selectedDate) errors.selectedDate = "Debes seleccionar una fecha."
-        if (!selectedTime) errors.selectedTime = "Debes seleccionar una hora."
-        setFormErrors(errors)
-        return Object.keys(errors).length === 0
-    }, [clientName, clientEmail, clientPhone, consultationType, selectedDate, selectedTime])
+        const dataToValidate = {
+            clientName,
+            clientEmail,
+            clientPhone,
+            consultationType,
+            notes: notes || null, // Zod espera null para opcionales si no hay valor
+            date: selectedDate,
+            time: selectedTime,
+        }
+
+        try {
+            appointmentSchema.parse(dataToValidate)
+            setFormErrors({}) // Limpiar errores si la validación es exitosa
+            return true
+        } catch (error) {
+            if (error instanceof ZodError) {
+                const errors = error.flatten().fieldErrors
+                // Zod.flatten().fieldErrors ya devuelve {[key: string]: string[]},
+                // por lo que no necesitamos castear a 'string'
+                setFormErrors(errors)
+                toast.error("Error de validación", {
+                    description: "Por favor, revisa los campos marcados en rojo.",
+                })
+            } else {
+                console.error("Unexpected validation error:", error)
+                toast.error("Error inesperado", {
+                    description: "Ocurrió un error durante la validación del formulario.",
+                })
+            }
+            return false
+        }
+    }, [clientName, clientEmail, clientPhone, consultationType, notes, selectedDate, selectedTime])
 
     const handleBookAppointment = useCallback(
-        (e: React.FormEvent) => {
+        async (e: React.FormEvent) => {
             e.preventDefault()
             if (!validateForm()) {
-                toast.error("Error de validación", {
-                    description: "Por favor, completa todos los campos obligatorios.",
-                })
-                return
+                return // Detener si la validación del cliente falla
             }
 
             if (!selectedDate || !selectedTime) {
@@ -138,8 +147,9 @@ export function useCalendarLogic() {
                 return
             }
 
-            const newAppointment: Appointment = {
-                id: String(appointments.length + 1),
+            setIsBooking(true) // Iniciar estado de carga del botón
+
+            const newAppointmentData = {
                 date: new Date(
                     selectedDate.getFullYear(),
                     selectedDate.getMonth(),
@@ -153,23 +163,45 @@ export function useCalendarLogic() {
                 clientPhone,
                 consultationType: consultationType as "ingreso" | "seguimiento",
                 notes,
-                status: "pendiente", // Nueva cita por defecto como pendiente
             }
 
-            setAppointments((prev) => [...prev, newAppointment])
-            toast.success("Cita Agendada con Éxito", {
-                description: `Tu cita para el ${format(selectedDate, "dd/MM/yyyy", { locale: es })} a las ${selectedTime} ha sido agendada. Recibirás un email de confirmación.`,
-            })
+            const response = await addAppointment(newAppointmentData)
+            setIsBooking(false) // Finalizar estado de carga del botón
 
-            // Reset form
-            setClientName("")
-            setClientEmail("")
-            setClientPhone("")
-            setConsultationType("")
-            setNotes("")
-            setSelectedTime(null)
-            setSelectedDate(null) // Reset selected date after booking
-            setFormErrors({})
+            if (response.success) {
+                const addedAppointment: Appointment = {
+                    ...newAppointmentData,
+                    id: response.id!,
+                    status: "pendiente",
+                }
+                setAppointments((prev) => [...prev, addedAppointment])
+                toast.success("Cita Agendada con Éxito", {
+                    description: `Tu cita para el ${format(selectedDate, "dd/MM/yyyy", { locale: es })} a las ${selectedTime} ha sido agendada. Recibirás un email de confirmación.`,
+                })
+
+                // Reset form
+                setClientName("")
+                setClientEmail("")
+                setClientPhone("")
+                setConsultationType("")
+                setNotes("")
+                setSelectedTime(null)
+                setSelectedDate(null)
+                setFormErrors({})
+            } else {
+                // Manejar errores de validación del servidor
+                if (response.errors) {
+                    // Los errores del servidor ya vienen como {[key: string]: string[]}
+                    setFormErrors(response.errors as { [key: string]: string[] | undefined })
+                    toast.error("Error de validación", {
+                        description: response.message || "Por favor, revisa los campos marcados en rojo.",
+                    })
+                } else {
+                    toast.error("Error al agendar cita", {
+                        description: response.message || "Ocurrió un error inesperado.",
+                    })
+                }
+            }
         },
         [
             validateForm,
@@ -199,6 +231,8 @@ export function useCalendarLogic() {
         startingDayIndex,
         daysOfWeek,
         availableTimeSlots,
+        isLoadingAppointments,
+        isBooking,
         setCurrentMonth,
         setSelectedDate,
         setClientName,
@@ -206,6 +240,7 @@ export function useCalendarLogic() {
         setClientPhone,
         setConsultationType,
         setNotes,
+        setFormErrors,
         setSelectedTime,
         handlePrevMonth,
         handleNextMonth,

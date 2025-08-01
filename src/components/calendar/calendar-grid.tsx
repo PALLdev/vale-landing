@@ -53,7 +53,8 @@ export function CalendarGrid({
           <Button variant="ghost" size="icon" onClick={handlePrevMonth}>
             <ChevronLeft className="h-5 w-5 text-purple-600" />
           </Button>
-          <h3 className="text-xl font-semibold text-gray-900">
+          <h3 className="text-xl font-semibold text-gray-900 capitalize">
+            {" "}
             {format(currentMonth, "MMMM yyyy", { locale: es })}
           </h3>
           <Button variant="ghost" size="icon" onClick={handleNextMonth}>

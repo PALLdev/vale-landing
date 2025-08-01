@@ -1,6 +1,7 @@
 "use client";
 
 import type React from "react";
+// Importar Dispatch y SetStateAction de React
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,9 +14,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { User, ArrowLeft } from "lucide-react";
+import { User, ArrowLeft, Loader2 } from "lucide-react";
 import type { Locale } from "date-fns";
 import { es } from "date-fns/locale";
+import type { Dispatch, SetStateAction } from "react"; // <-- Importar estos tipos
 
 interface AppointmentFormProps {
   selectedDate: Date | null;
@@ -30,7 +32,11 @@ interface AppointmentFormProps {
   setConsultationType: (type: "ingreso" | "seguimiento") => void;
   notes: string;
   setNotes: (notes: string) => void;
-  formErrors: { [key: string]: string };
+  formErrors: { [key: string]: string[] | undefined };
+  // CAMBIO AQUÍ: Usar Dispatch y SetStateAction para el tipo de setFormErrors
+  setFormErrors: Dispatch<
+    SetStateAction<{ [key: string]: string[] | undefined }>
+  >;
   handleBookAppointment: (e: React.FormEvent) => void;
   setSelectedTime: (time: string | null) => void;
   format: (
@@ -38,6 +44,7 @@ interface AppointmentFormProps {
     formatStr: string,
     options?: { locale?: Locale }
   ) => string;
+  isBooking: boolean;
 }
 
 export function AppointmentForm({
@@ -57,11 +64,34 @@ export function AppointmentForm({
   handleBookAppointment,
   setSelectedTime,
   format,
+  isBooking,
+  setFormErrors,
 }: AppointmentFormProps) {
   if (!selectedDate || !selectedTime) {
-    // Esto no debería ocurrir si el componente se renderiza condicionalmente
     return null;
   }
+
+  const handleGoBack = () => {
+    setFormErrors({}); // Limpiar errores al volver
+    setSelectedTime(null);
+  };
+
+  // Función auxiliar para mostrar solo el primer error
+  const getFirstError = (field: keyof typeof formErrors) => {
+    const errors = formErrors[field];
+    return errors && errors.length > 0 ? errors[0] : null;
+  };
+
+  // Función para limpiar un error específico al cambiar el campo
+  const clearFieldError = (field: keyof typeof formErrors) => {
+    if (formErrors[field]) {
+      setFormErrors((prevErrors) => ({
+        // Ya no es necesario el casteo explícito aquí
+        ...prevErrors,
+        [field]: undefined, // O [] si prefieres un array vacío
+      }));
+    }
+  };
 
   return (
     <Card className="shadow-lg border-purple-100">
@@ -74,7 +104,7 @@ export function AppointmentForm({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setSelectedTime(null)}
+            onClick={handleGoBack}
             className="text-purple-600 hover:text-purple-800"
           >
             <ArrowLeft className="h-4 w-4 mr-1" /> Volver
@@ -102,13 +132,16 @@ export function AppointmentForm({
               id="client-name"
               type="text"
               value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
+              onChange={(e) => {
+                setClientName(e.target.value);
+                clearFieldError("clientName");
+              }}
               placeholder="Tu nombre"
               className="mt-1"
             />
-            {formErrors.clientName && (
+            {getFirstError("clientName") && (
               <p className="text-red-500 text-xs mt-1">
-                {formErrors.clientName}
+                {getFirstError("clientName")}
               </p>
             )}
           </div>
@@ -124,13 +157,16 @@ export function AppointmentForm({
               id="client-email"
               type="email"
               value={clientEmail}
-              onChange={(e) => setClientEmail(e.target.value)}
+              onChange={(e) => {
+                setClientEmail(e.target.value);
+                clearFieldError("clientEmail");
+              }}
               placeholder="tu.email@ejemplo.com"
               className="mt-1"
             />
-            {formErrors.clientEmail && (
+            {getFirstError("clientEmail") && (
               <p className="text-red-500 text-xs mt-1">
-                {formErrors.clientEmail}
+                {getFirstError("clientEmail")}
               </p>
             )}
           </div>
@@ -146,13 +182,16 @@ export function AppointmentForm({
               id="client-phone"
               type="tel"
               value={clientPhone}
-              onChange={(e) => setClientPhone(e.target.value)}
+              onChange={(e) => {
+                setClientPhone(e.target.value);
+                clearFieldError("clientPhone");
+              }}
               placeholder="Ej: 912345678"
               className="mt-1"
             />
-            {formErrors.clientPhone && (
+            {getFirstError("clientPhone") && (
               <p className="text-red-500 text-xs mt-1">
-                {formErrors.clientPhone}
+                {getFirstError("clientPhone")}
               </p>
             )}
           </div>
@@ -163,9 +202,10 @@ export function AppointmentForm({
             </Label>
             <Select
               value={consultationType}
-              onValueChange={(value: "ingreso" | "seguimiento") =>
-                setConsultationType(value)
-              }
+              onValueChange={(value: "ingreso" | "seguimiento") => {
+                setConsultationType(value);
+                clearFieldError("consultationType");
+              }}
             >
               <SelectTrigger className="w-full mt-1">
                 <SelectValue placeholder="Selecciona el tipo de consulta" />
@@ -177,9 +217,9 @@ export function AppointmentForm({
                 </SelectItem>
               </SelectContent>
             </Select>
-            {formErrors.consultationType && (
+            {getFirstError("consultationType") && (
               <p className="text-red-500 text-xs mt-1">
-                {formErrors.consultationType}
+                {getFirstError("consultationType")}
               </p>
             )}
           </div>
@@ -191,7 +231,10 @@ export function AppointmentForm({
             <Textarea
               id="notes"
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e) => {
+                setNotes(e.target.value);
+                clearFieldError("notes");
+              }}
               placeholder="Ej: Objetivos específicos, alergias, etc."
               className="mt-1"
             />
@@ -200,9 +243,16 @@ export function AppointmentForm({
           <Button
             type="submit"
             className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3"
-            disabled={Object.keys(formErrors).length > 0}
+            disabled={isBooking}
           >
-            Confirmar Cita
+            {isBooking ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Agendando...
+              </>
+            ) : (
+              "Confirmar Cita"
+            )}
           </Button>
         </form>
       </CardContent>
