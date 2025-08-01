@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react";
 import type { Locale } from "date-fns";
 import { isSameMonth } from "date-fns";
+import type { Appointment } from "@/types/calendar"; // Asegurarse de importar Appointment
 
 interface CalendarGridProps {
   currentMonth: Date;
@@ -23,8 +24,8 @@ interface CalendarGridProps {
     options?: { locale?: Locale }
   ) => string;
   es: Locale;
-  isDayFullyBooked: (date: Date, allAppointments: any[]) => boolean;
-  appointments: any[];
+  isDayFullyBooked: (date: Date, allAppointments: Appointment[]) => boolean; // Cambiado de any[] a Appointment[]
+  appointments: Appointment[]; // Cambiado de any[] a Appointment[]
 }
 
 export function CalendarGrid({

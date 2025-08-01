@@ -214,17 +214,7 @@ export function useCalendarLogic() {
                 }
             }
         },
-        [
-            validateForm,
-            selectedDate,
-            selectedTime,
-            clientName,
-            clientEmail,
-            clientPhone,
-            consultationType,
-            notes,
-            appointments.length,
-        ],
+        [validateForm, selectedDate, selectedTime, clientName, clientEmail, clientPhone, consultationType, notes],
     )
 
     return {
