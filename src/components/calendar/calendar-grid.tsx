@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react";
 import type { Locale } from "date-fns";
-import { isSameMonth } from "date-fns";
+import { isSameMonth, format } from "date-fns"; // Import format here
 import type { Appointment } from "@/types/calendar"; // Asegurarse de importar Appointment
 
 interface CalendarGridProps {
@@ -40,12 +40,17 @@ export function CalendarGrid({
   isPast,
   isToday,
   isSameDay,
-  format,
+  format: formatFn, // Renamed to avoid conflict with date-fns format
   es,
   isDayFullyBooked,
   appointments,
 }: CalendarGridProps) {
   const today = new Date();
+
+  // Calculate total cells needed for a consistent 6-week grid (6 rows * 7 days)
+  const totalCellsInGrid = 42;
+  const daysRendered = startingDayIndex + daysInMonth.length;
+  const trailingEmptyCells = totalCellsInGrid - daysRendered;
 
   return (
     <Card className="shadow-lg border-purple-100 h-[650px]">
@@ -67,7 +72,7 @@ export function CalendarGrid({
           {/* Espaciador para centrar el título si el botón está oculto */}
           {isSameMonth(currentMonth, today) && <div className="w-10"></div>}
           <h3 className="text-xl font-semibold text-gray-900 capitalize">
-            {format(currentMonth, "MMMM yyyy", { locale: es })}
+            {formatFn(currentMonth, "MMMM yyyy", { locale: es })}
           </h3>
           <Button variant="ghost" size="icon" onClick={handleNextMonth}>
             <ChevronRight className="h-5 w-5 text-purple-600" />
@@ -82,9 +87,13 @@ export function CalendarGrid({
         </div>
 
         {/* Días del Mes */}
-        <div className="grid grid-cols-7 gap-1">
+        {/* Added key to force re-render of the grid on month change */}
+        <div
+          key={format(currentMonth, "yyyy-MM")}
+          className="grid grid-cols-7 gap-1"
+        >
           {Array.from({ length: startingDayIndex }).map((_, i) => (
-            <div key={`empty-${i}`} className="h-12"></div>
+            <div key={`empty-start-${i}`} className="h-12"></div>
           ))}
           {daysInMonth.map((day, index) => {
             const isPastDay = isPast(day) && !isToday(day);
@@ -122,10 +131,13 @@ export function CalendarGrid({
                 onClick={() => handleDateSelect(day)}
                 disabled={isDisabled}
               >
-                <span className={dayNumberClasses}>{format(day, "d")}</span>
+                <span className={dayNumberClasses}>{formatFn(day, "d")}</span>
               </Button>
             );
           })}
+          {Array.from({ length: trailingEmptyCells }).map((_, i) => (
+            <div key={`empty-end-${i}`} className="h-12"></div>
+          ))}
         </div>
 
         {/* Leyenda del Calendario */}
