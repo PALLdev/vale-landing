@@ -20,10 +20,10 @@ export function generateTimeSlots(
     }
 
     const timeSlots: TimeSlot[] = []
-    const startHour = 9 // 9 AM
-    const endHour = 18 // 6 PM (exclusive, so last slot is 17:00)
-    const breakStartHour = 13 // 1 PM
-    const breakEndHour = 14 // 2 PM
+    const startHour = 10 // 10 AM
+    const endHour = 21 // 9 PM (exclusive, so last slot is 20:00)
+    const breakStartHour = 14 // 2 PM
+    const breakEndHour = 15 // 3 PM
 
     const now = new Date()
     const isSelectedDateToday = isToday(date)

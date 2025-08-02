@@ -105,7 +105,7 @@ export function AdminBookingModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] md:max-w-[768px] lg:max-w-[1000px] p-6 bg-white dark:bg-gray-800 rounded-lg shadow-xl max-h-[90vh] overflow-y-scroll">
+      <DialogContent className="sm:max-w-[600px] md:max-w-[768px] lg:max-w-[1000px] lg:pr-0 pr-2 pl-4 py-6 bg-white dark:bg-gray-800 rounded-lg shadow-xl max-h-[90vh] overflow-y-scroll">
         <DialogHeader className="border-b pb-4 mb-4">
           <DialogTitle className="text-2xl font-bold text-purple-800 dark:text-purple-300">
             Agendar Nueva Cita
