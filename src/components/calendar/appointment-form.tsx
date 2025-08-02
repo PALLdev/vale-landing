@@ -105,9 +105,10 @@ export function AppointmentForm({
             variant="ghost"
             size="sm"
             onClick={handleGoBack}
-            className="text-purple-600 hover:text-purple-800"
+            className="text-purple-600 hover:text-purple-800 gap-1" // Reducido el gap a 1
           >
-            <ArrowLeft className="h-4 w-4 mr-1" /> Volver
+            <ArrowLeft className="h-4 w-4" /> {/* Eliminado mr-1 */}
+            Volver
           </Button>
         </div>
         <p className="text-gray-600 text-sm">

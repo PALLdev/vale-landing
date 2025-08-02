@@ -151,6 +151,12 @@ export function CalendarGrid({
 
         {/* Leyenda del Calendario */}
         <div className="mt-8 pt-4 border-t border-gray-100 text-sm text-gray-600 flex flex-wrap justify-center gap-x-6 gap-y-2">
+          {showAppointmentIndicator && ( // Conditional rendering for the legend entry
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>
+              <span>Día con citas</span>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <span className="w-4 h-4 border-2 border-purple-400 rounded-lg"></span>
             <span>Día actual</span>
@@ -167,12 +173,6 @@ export function CalendarGrid({
             <span className="w-4 h-4 bg-gray-100 rounded-lg opacity-60"></span>
             <span>Día no disponible</span>
           </div>
-          {showAppointmentIndicator && ( // Conditional rendering for the legend entry
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>
-              <span>Día con citas</span>
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>

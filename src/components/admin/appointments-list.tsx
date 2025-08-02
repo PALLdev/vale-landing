@@ -12,7 +12,7 @@ import {
   Info,
   ClipboardList,
   CalendarIcon,
-} from "lucide-react"; // Importar CalendarIcon
+} from "lucide-react";
 
 interface AppointmentsListProps {
   selectedDate: Date | null;
@@ -49,7 +49,9 @@ export function AppointmentsList({
   }
 
   return (
-    <Card className="shadow-lg border-purple-100 min-h-[400px]">
+    <Card className="shadow-lg border-purple-100">
+      {" "}
+      {/* Eliminado min-h-[400px] */}
       <CardHeader className="pb-4">
         <CardTitle className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
           <ClipboardList className="h-6 w-6 text-purple-600" />
@@ -77,11 +79,15 @@ export function AppointmentsList({
                     </div>
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-purple-500" />
-                      <span>{appt.clientName}</span>
+                      <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+                        {appt.clientName}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Mail className="h-4 w-4 text-purple-500" />
-                      <span>{appt.clientEmail}</span>
+                      <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+                        {appt.clientEmail}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4 text-purple-500" />
