@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react"; // Importar useState
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { isSameDay } from "date-fns";
@@ -12,7 +13,10 @@ import {
   Info,
   ClipboardList,
   CalendarIcon,
-} from "lucide-react";
+  Eye,
+  Pencil,
+} from "lucide-react"; // Importar Eye y Pencil
+import { AppointmentModal } from "@/components/admin/appointments-modal"; // Importar el nuevo modal
 
 interface AppointmentsListProps {
   selectedDate: Date | null;
@@ -23,6 +27,7 @@ interface AppointmentsListProps {
     options?: { locale?: typeof es }
   ) => string;
   es: typeof es;
+  onAppointmentUpdated: () => void; // Nueva prop para recargar citas
 }
 
 export function AppointmentsList({
@@ -30,10 +35,33 @@ export function AppointmentsList({
   appointments,
   format: formatFn,
   es,
+  onAppointmentUpdated,
 }: AppointmentsListProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedAppointmentForModal, setSelectedAppointmentForModal] =
+    useState<Appointment | null>(null);
+  const [modalMode, setModalMode] = useState<"view" | "edit">("view");
+
   const filteredAppointments = selectedDate
     ? appointments.filter((appt) => isSameDay(appt.date, selectedDate))
     : [];
+
+  const handleViewDetails = (appointment: Appointment) => {
+    setSelectedAppointmentForModal(appointment);
+    setModalMode("view");
+    setIsModalOpen(true);
+  };
+
+  const handleEditAppointment = (appointment: Appointment) => {
+    setSelectedAppointmentForModal(appointment);
+    setModalMode("edit");
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedAppointmentForModal(null);
+  };
 
   if (!selectedDate) {
     return (
@@ -49,83 +77,102 @@ export function AppointmentsList({
   }
 
   return (
-    <Card className="shadow-lg border-purple-100">
-      {" "}
-      {/* Eliminado min-h-[400px] */}
-      <CardHeader className="pb-4">
-        <CardTitle className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
-          <ClipboardList className="h-6 w-6 text-purple-600" />
-          {`Citas para el ${formatFn(selectedDate, "dd MMMM yyyy", {
-            locale: es,
-          })}`}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {filteredAppointments.length === 0 && (
-          <p className="text-gray-700 text-center py-4">
-            No hay citas agendadas para este día.
-          </p>
-        )}
+    <>
+      <Card className="shadow-lg border-purple-100">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+            <ClipboardList className="h-6 w-6 text-purple-600" />
+            {`Citas para el ${formatFn(selectedDate, "dd MMMM yyyy", {
+              locale: es,
+            })}`}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {filteredAppointments.length === 0 && (
+            <p className="text-gray-700 text-center py-4">
+              No hay citas agendadas para este día.
+            </p>
+          )}
 
-        {filteredAppointments.length > 0 && (
-          <div className="space-y-4">
-            {filteredAppointments.map((appt) => (
-              <Card key={appt.id} className="border-gray-200 shadow-sm">
-                <CardContent className="p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-purple-500" />
-                      <span className="font-semibold">{appt.time}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-purple-500" />
-                      <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
-                        {appt.clientName}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-purple-500" />
-                      <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
-                        {appt.clientEmail}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-purple-500" />
-                      <span>{appt.clientPhone}</span>
-                    </div>
-                    <div className="flex items-center gap-2 col-span-full">
-                      <Info className="h-4 w-4 text-purple-500" />
-                      <span>
-                        Tipo:{" "}
-                        {appt.consultationType === "ingreso"
-                          ? "Ingreso"
-                          : "Seguimiento"}
-                      </span>
-                    </div>
-                    {appt.notes && (
-                      <div className="flex items-start gap-2 col-span-full">
-                        <ClipboardList className="h-4 w-4 text-purple-500 mt-1" />
-                        <p className="flex-1">Notas: {appt.notes}</p>
+          {filteredAppointments.length > 0 && (
+            <div className="space-y-4">
+              {filteredAppointments.map((appt) => (
+                <Card key={appt.id} className="border-gray-200 shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-purple-500" />
+                        <span className="font-semibold">{appt.time}</span>
                       </div>
-                    )}
-                  </div>
-                  <div className="flex justify-end gap-2 mt-4">
-                    <Button variant="outline" size="sm">
-                      Ver Detalles
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      Editar
-                    </Button>
-                    <Button variant="destructive" size="sm">
-                      Eliminar
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-purple-500" />
+                        <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+                          {appt.clientName}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-purple-500" />
+                        <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+                          {appt.clientEmail}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-purple-500" />
+                        <span>{appt.clientPhone}</span>
+                      </div>
+                      <div className="flex items-center gap-2 col-span-full">
+                        <Info className="h-4 w-4 text-purple-500" />
+                        <span>
+                          Tipo:{" "}
+                          {appt.consultationType === "ingreso"
+                            ? "Ingreso"
+                            : "Seguimiento"}
+                        </span>
+                      </div>
+                      {appt.notes && (
+                        <div className="flex items-start gap-2 col-span-full">
+                          <ClipboardList className="h-4 w-4 text-purple-500 mt-1" />
+                          <p className="flex-1">Notas: {appt.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex justify-end gap-2 mt-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewDetails(appt)}
+                      >
+                        <Eye className="h-4 w-4 mr-1" /> Ver Detalles
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditAppointment(appt)}
+                      >
+                        <Pencil className="h-4 w-4 mr-1" /> Editar
+                      </Button>
+                      <Button variant="destructive" size="sm">
+                        Eliminar
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {selectedAppointmentForModal && (
+        <AppointmentModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          appointment={selectedAppointmentForModal}
+          mode={modalMode}
+          onSaveSuccess={onAppointmentUpdated}
+          allAppointments={appointments} // Pass all appointments for time slot generation
+        />
+      )}
+    </>
   );
 }

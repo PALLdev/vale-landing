@@ -7,9 +7,14 @@ import type { Appointment, TimeSlot } from "@/types/calendar"
  *
  * @param date The date for which to generate time slots.
  * @param appointments An array of existing appointments.
+ * @param excludeAppointmentId Optional ID of an appointment to exclude from the check.
  * @returns An array of TimeSlot objects.
  */
-export function generateTimeSlots(date: Date | null, appointments: Appointment[]): TimeSlot[] {
+export function generateTimeSlots(
+    date: Date | null,
+    appointments: Appointment[],
+    excludeAppointmentId?: string,
+): TimeSlot[] {
     if (!date) {
         return []
     }
@@ -61,8 +66,10 @@ export function generateTimeSlots(date: Date | null, appointments: Appointment[]
         // Check if the slot is in the past for today's date
         const isSlotPast = isSelectedDateToday && isPast(slotDateTime)
 
-        // Check if the slot is already booked
-        const isBooked = appointments.some((appt) => isSameDay(appt.date, date) && appt.time === slotTime)
+        // Check if the slot is already booked, excluding the appointment being edited
+        const isBooked = appointments.some(
+            (appt) => isSameDay(appt.date, date) && appt.time === slotTime && appt.id !== excludeAppointmentId,
+        )
 
         timeSlots.push({
             time: slotTime,

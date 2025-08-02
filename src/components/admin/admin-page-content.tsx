@@ -1,9 +1,10 @@
 "use client";
-import { useRef } from "react";
+import { useRef, useCallback } from "react";
 import { useCalendarLogic } from "@/hooks/use-calendar-logic";
 import { CalendarGrid } from "@/components/calendar/calendar-grid";
 import { AppointmentsList } from "@/components/admin/appointments-list";
 import { Loader2 } from "lucide-react";
+import { getAppointments } from "@/actions/appointments";
 
 export function AdminCalendarPageContent() {
   const {
@@ -23,6 +24,8 @@ export function AdminCalendarPageContent() {
     format,
     es,
     isDayFullyBooked,
+    setAppointments,
+    setIsLoadingAppointments,
   } = useCalendarLogic();
 
   const appointmentsListRef = useRef<HTMLDivElement>(null);
@@ -36,6 +39,20 @@ export function AdminCalendarPageContent() {
       });
     }
   };
+
+  // Función para recargar las citas
+  const refetchAppointments = useCallback(async () => {
+    setIsLoadingAppointments(true);
+    try {
+      const fetchedAppointments = await getAppointments();
+      setAppointments(fetchedAppointments);
+    } catch (error) {
+      console.error("Error refetching appointments:", error);
+      // Opcional: mostrar un toast de error
+    } finally {
+      setIsLoadingAppointments(false);
+    }
+  }, [setAppointments, setIsLoadingAppointments]);
 
   if (isLoadingAppointments) {
     return (
@@ -73,6 +90,7 @@ export function AdminCalendarPageContent() {
           appointments={appointments}
           format={format}
           es={es}
+          onAppointmentUpdated={refetchAppointments}
         />
       </div>
     </div>

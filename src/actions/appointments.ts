@@ -99,3 +99,76 @@ export async function addAppointment(appointmentData: {
         }
     }
 }
+
+// Función para actualizar una cita existente
+export async function updateAppointment(
+    id: string,
+    updatedData: {
+        date: Date
+        time: string
+        clientName: string
+        clientEmail: string
+        clientPhone: string
+        consultationType: "ingreso" | "seguimiento"
+        notes: string | null // CAMBIO AQUÍ: Permitir que notes sea string o null
+    },
+) {
+    try {
+        // Validar los datos de entrada con Zod
+        const validatedData = appointmentSchema.parse(updatedData)
+
+        // Opcional: Verificar disponibilidad del nuevo horario si el tiempo o la fecha cambian
+        // Para una solución más robusta, se podría re-validar la disponibilidad
+        // en el servidor, pero para este caso, asumimos que la validación
+        // en el cliente (modal) es suficiente para la mayoría de los casos.
+        // Si se requiere una verificación estricta de conflictos, se necesitaría
+        // una lógica más compleja que involucre la obtención de todas las citas
+        // excepto la que se está editando.
+
+        const { error } = await supabase
+            .from("appointments")
+            .update({
+                date: validatedData.date.toISOString(), // Convertir Date a ISO string para Supabase
+                time: validatedData.time,
+                client_name: validatedData.clientName,
+                client_email: validatedData.clientEmail,
+                client_phone: validatedData.clientPhone,
+                consultation_type: validatedData.consultationType,
+                notes: validatedData.notes,
+            })
+            .eq("id", id) // Actualizar la cita con el ID dado
+
+        if (error) {
+            console.error("Supabase Error (updateAppointment):", error)
+            return {
+                success: false,
+                message: error.message || "Failed to update appointment",
+                errors: null,
+            }
+        }
+
+        return {
+            success: true,
+            message: "Appointment updated successfully",
+            errors: null,
+        }
+    } catch (error) {
+        // Manejar errores de validación de Zod
+        if (error instanceof ZodError) {
+            const errors = error.flatten().fieldErrors
+            console.error("Validation Error (updateAppointment):", errors)
+            return {
+                success: false,
+                message: "Error de validación en los datos de la cita.",
+                errors: errors,
+            }
+        }
+        // Manejar otros errores inesperados
+        console.error("Server Action Error (updateAppointment):", error)
+        return {
+            success: false,
+            message: "Ocurrió un error inesperado al actualizar la cita.",
+            errors: null,
+        }
+    }
+}

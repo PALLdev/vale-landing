@@ -254,5 +254,7 @@ export function useCalendarLogic() {
         format,
         es,
         isDayFullyBooked,
+        setAppointments,
+        setIsLoadingAppointments,
     }
 }
