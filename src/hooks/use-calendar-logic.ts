@@ -149,14 +149,14 @@ export function useCalendarLogic() {
         async (e: React.FormEvent) => {
             e.preventDefault()
             if (!validateForm()) {
-                return // Detener si la validación del cliente falla
+                return false // Detener si la validación del cliente falla
             }
 
             if (!selectedDate || !selectedTime) {
                 toast.error("Error", {
                     description: "Fecha u hora no seleccionada. Por favor, selecciona una fecha y hora.",
                 })
-                return
+                return false
             }
 
             setIsBooking(true) // Iniciar estado de carga del botón
@@ -200,6 +200,7 @@ export function useCalendarLogic() {
                 setSelectedTime(null)
                 setSelectedDate(null)
                 setFormErrors({})
+                return true // Indicar éxito
             } else {
                 // Manejar errores de validación del servidor
                 if (response.errors) {
@@ -212,6 +213,7 @@ export function useCalendarLogic() {
                         description: response.message || "Ocurrió un error inesperado.",
                     })
                 }
+                return false // Indicar fallo
             }
         },
         [validateForm, selectedDate, selectedTime, clientName, clientEmail, clientPhone, consultationType, notes],

@@ -57,7 +57,7 @@ export function CalendarGrid({
   return (
     <Card className="shadow-lg border-purple-100 h-[650px]">
       <CardHeader className="pb-4">
-        <CardTitle className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+        <CardTitle className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
           <CalendarIcon className="h-6 w-6 text-purple-600" />
           Selecciona tu Fecha
         </CardTitle>
@@ -150,7 +150,7 @@ export function CalendarGrid({
         </div>
 
         {/* Leyenda del Calendario */}
-        <div className="mt-8 pt-4 border-t border-gray-100 text-sm text-gray-600 flex flex-wrap justify-center gap-x-6 gap-y-2">
+        <div className="mt-8 pt-4 border-t border-gray-100 text-xs sm:text-sm text-gray-600 flex flex-wrap justify-center gap-x-0.5 sm:gap-x-6 gap-y-2">
           {showAppointmentIndicator && ( // Conditional rendering for the legend entry
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>
