@@ -89,6 +89,7 @@ export function CalendarSystem() {
         es={es}
         isDayFullyBooked={isDayFullyBooked}
         appointments={appointments}
+        showAppointmentIndicator={false}
       />
 
       {/* Columna del Panel Lateral (Horarios O Formulario) */}

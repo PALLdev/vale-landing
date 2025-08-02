@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react";
 import type { Locale } from "date-fns";
-import { isSameMonth, format } from "date-fns"; // Import format here
-import type { Appointment } from "@/types/calendar"; // Asegurarse de importar Appointment
+import { isSameMonth, format } from "date-fns";
+import type { Appointment } from "@/types/calendar";
+import { hasAppointmentsOnDay } from "@/lib/calendar-helpers";
 
 interface CalendarGridProps {
   currentMonth: Date;
@@ -24,8 +25,9 @@ interface CalendarGridProps {
     options?: { locale?: Locale }
   ) => string;
   es: Locale;
-  isDayFullyBooked: (date: Date, allAppointments: Appointment[]) => boolean; // Cambiado de any[] a Appointment[]
-  appointments: Appointment[]; // Cambiado de any[] a Appointment[]
+  isDayFullyBooked: (date: Date, allAppointments: Appointment[]) => boolean;
+  appointments: Appointment[];
+  showAppointmentIndicator: boolean; // New prop
 }
 
 export function CalendarGrid({
@@ -40,14 +42,14 @@ export function CalendarGrid({
   isPast,
   isToday,
   isSameDay,
-  format: formatFn, // Renamed to avoid conflict with date-fns format
+  format: formatFn,
   es,
   isDayFullyBooked,
   appointments,
+  showAppointmentIndicator, // Destructure new prop
 }: CalendarGridProps) {
   const today = new Date();
 
-  // Calculate total cells needed for a consistent 6-week grid (6 rows * 7 days)
   const totalCellsInGrid = 42;
   const daysRendered = startingDayIndex + daysInMonth.length;
   const trailingEmptyCells = totalCellsInGrid - daysRendered;
@@ -63,13 +65,11 @@ export function CalendarGrid({
       <CardContent>
         {/* Navegación del Mes */}
         <div className="flex items-center justify-between mb-6">
-          {/* Ocultar el botón de mes anterior si es el mes actual */}
           {!isSameMonth(currentMonth, today) && (
             <Button variant="ghost" size="icon" onClick={handlePrevMonth}>
               <ChevronLeft className="h-5 w-5 text-purple-600" />
             </Button>
           )}
-          {/* Espaciador para centrar el título si el botón está oculto */}
           {isSameMonth(currentMonth, today) && <div className="w-10"></div>}
           <h3 className="text-xl font-semibold text-gray-900 capitalize">
             {formatFn(currentMonth, "MMMM yyyy", { locale: es })}
@@ -87,7 +87,6 @@ export function CalendarGrid({
         </div>
 
         {/* Días del Mes */}
-        {/* Added key to force re-render of the grid on month change */}
         <div
           key={format(currentMonth, "yyyy-MM")}
           className="grid grid-cols-7 gap-1"
@@ -97,9 +96,10 @@ export function CalendarGrid({
           ))}
           {daysInMonth.map((day, index) => {
             const isPastDay = isPast(day) && !isToday(day);
-            const isSunday = day.getDay() === 0; // Sunday is 0
+            const isSunday = day.getDay() === 0;
             const isFullyBookedDay = isDayFullyBooked(day, appointments);
-            const isDisabled = isPastDay || isSunday; // A day is disabled if it's past or a Sunday
+            const hasAppts = hasAppointmentsOnDay(day, appointments);
+            const isDisabled = isPastDay || isSunday;
             const isSelected = selectedDate && isSameDay(day, selectedDate);
             const isCurrentDay = isToday(day);
 
@@ -111,16 +111,16 @@ export function CalendarGrid({
               dayNumberClasses += ` text-white`;
             } else if (isDisabled) {
               dayButtonClasses += ` cursor-not-allowed opacity-60 bg-gray-100`;
-              dayNumberClasses += ` text-gray-400`; // Text color for disabled days
+              dayNumberClasses += ` text-gray-400`;
             } else if (isFullyBookedDay) {
               dayButtonClasses += ` bg-red-100 hover:bg-red-200`;
-              dayNumberClasses += ` text-gray-900`; // Text color for fully booked days (black)
+              dayNumberClasses += ` text-gray-900`;
             } else if (isCurrentDay) {
               dayButtonClasses += ` border-2 border-purple-400 hover:bg-purple-50`;
-              dayNumberClasses += ` text-purple-700 font-semibold`; // Text color for current day
+              dayNumberClasses += ` text-purple-700 font-semibold`;
             } else {
               dayButtonClasses += ` hover:bg-purple-50`;
-              dayNumberClasses += ` text-gray-900`; // Default text color for available days (black)
+              dayNumberClasses += ` text-gray-900`;
             }
 
             return (
@@ -132,6 +132,15 @@ export function CalendarGrid({
                 disabled={isDisabled}
               >
                 <span className={dayNumberClasses}>{formatFn(day, "d")}</span>
+                {showAppointmentIndicator &&
+                  hasAppts &&
+                  !isDisabled &&
+                  !isFullyBookedDay && (
+                    <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-purple-500 rounded-full" />
+                  )}
+                {showAppointmentIndicator && hasAppts && isFullyBookedDay && (
+                  <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-red-500 rounded-full" />
+                )}
               </Button>
             );
           })}
@@ -158,6 +167,12 @@ export function CalendarGrid({
             <span className="w-4 h-4 bg-gray-100 rounded-lg opacity-60"></span>
             <span>Día no disponible</span>
           </div>
+          {showAppointmentIndicator && ( // Conditional rendering for the legend entry
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>
+              <span>Día con citas</span>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

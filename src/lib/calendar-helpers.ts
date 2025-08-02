@@ -1,55 +1,100 @@
-import { isSameDay } from "date-fns"
+import { isSameDay, setHours, setMinutes, isPast, isToday, format, getDay } from "date-fns"
 import type { Appointment, TimeSlot } from "@/types/calendar"
 
 /**
- * Genera una lista de franjas horarias disponibles para una fecha dada.
- * Las citas son cada hora, y hay un descanso de 13:00 a 14:00.
+ * Generates time slots for a given date, excluding a break from 1 PM to 2 PM,
+ * and marking slots as unavailable if they are in the past or already booked.
  *
- * @param date La fecha para la que se generarán las franjas horarias.
- * @param appointments La lista de citas existentes para verificar la disponibilidad.
- * @returns Un array de objetos TimeSlot.
+ * @param date The date for which to generate time slots.
+ * @param appointments An array of existing appointments.
+ * @returns An array of TimeSlot objects.
  */
 export function generateTimeSlots(date: Date | null, appointments: Appointment[]): TimeSlot[] {
-    if (!date) return []
+    if (!date) {
+        return []
+    }
 
-    const slots: TimeSlot[] = []
+    const timeSlots: TimeSlot[] = []
+    const startHour = 9 // 9 AM
+    const endHour = 18 // 6 PM (exclusive, so last slot is 17:00)
+    const breakStartHour = 13 // 1 PM
+    const breakEndHour = 14 // 2 PM
+
     const now = new Date()
-    const isSelectedDateToday = isSameDay(date, now)
+    const isSelectedDateToday = isToday(date)
+    const isSelectedDatePast = isPast(date) && !isSelectedDateToday
 
-    for (let hour = 9; hour <= 17; hour++) {
-        // Excluir la hora de descanso (13:00 a 14:00)
-        if (hour === 13) {
+    // If the selected date is in the past (and not today), all slots are unavailable
+    if (isSelectedDatePast) {
+        for (let hour = startHour; hour < endHour; hour++) {
+            if (hour >= breakStartHour && hour < breakEndHour) {
+                continue // Skip break hour
+            }
+            const slotTime = format(setMinutes(setHours(date, hour), 0), "HH:mm")
+            timeSlots.push({ time: slotTime, isAvailable: false })
+        }
+        return timeSlots
+    }
+
+    // If the selected date is a Sunday, no slots are available
+    if (getDay(date) === 0) {
+        // Sunday is 0
+        for (let hour = startHour; hour < endHour; hour++) {
+            if (hour >= breakStartHour && hour < breakEndHour) {
+                continue // Skip break hour
+            }
+            const slotTime = format(setMinutes(setHours(date, hour), 0), "HH:mm")
+            timeSlots.push({ time: slotTime, isAvailable: false })
+        }
+        return timeSlots
+    }
+
+    for (let hour = startHour; hour < endHour; hour++) {
+        // Skip the break time
+        if (hour >= breakStartHour && hour < breakEndHour) {
             continue
         }
 
-        // Generar slots cada hora (minuto 00)
-        const minute = 0
-        const slotTime = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`
-        const slotDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, minute)
+        const slotDateTime = setMinutes(setHours(date, hour), 0)
+        const slotTime = format(slotDateTime, "HH:mm")
 
-        const isOccupied = appointments.some((appt) => isSameDay(appt.date, date) && appt.time === slotTime)
+        // Check if the slot is in the past for today's date
+        const isSlotPast = isSelectedDateToday && isPast(slotDateTime)
 
-        const isPastTime = isSelectedDateToday && slotDate < now
+        // Check if the slot is already booked
+        const isBooked = appointments.some((appt) => isSameDay(appt.date, date) && appt.time === slotTime)
 
-        slots.push({
+        timeSlots.push({
             time: slotTime,
-            isAvailable: !isOccupied && !isPastTime,
+            isAvailable: !isSlotPast && !isBooked,
         })
     }
-    return slots
+
+    return timeSlots
 }
 
 /**
- * Verifica si todos los horarios *potenciales* de un día específico están completamente reservados.
- * Esta función NO considera si el día es pasado, solo si los slots generados están ocupados.
+ * Checks if a given day is fully booked based on available time slots.
+ * A day is considered fully booked if all its potential time slots are unavailable.
  *
- * @param date El día a verificar.
- * @param allAppointments Todas las citas existentes.
- * @returns True si todos los horarios están reservados, false en caso contrario.
+ * @param date The date to check.
+ * @param allAppointments All existing appointments.
+ * @returns True if the day is fully booked, false otherwise.
  */
 export function isDayFullyBooked(date: Date, allAppointments: Appointment[]): boolean {
-    const slotsForDay = generateTimeSlots(date, allAppointments)
-    // Un día está completamente reservado si genera slots y todos ellos no están disponibles.
-    // Si no hay slots generados (ej. fuera de horario laboral), también se considera "sin horarios".
-    return slotsForDay.length > 0 && slotsForDay.every((slot) => !slot.isAvailable)
+    const potentialSlots = generateTimeSlots(date, allAppointments)
+    // A day is fully booked if all its potential slots are marked as not available
+    // or if there are no potential slots (e.g., Sundays, past days where all are unavailable).
+    return potentialSlots.length > 0 && potentialSlots.every((slot) => !slot.isAvailable)
+}
+
+/**
+ * Checks if a given day has any appointments.
+ *
+ * @param date The date to check.
+ * @param allAppointments All existing appointments.
+ * @returns True if the day has at least one appointment, false otherwise.
+ */
+export function hasAppointmentsOnDay(date: Date, allAppointments: Appointment[]): boolean {
+    return allAppointments.some((appt) => isSameDay(appt.date, date))
 }

@@ -20,6 +20,10 @@ export async function getAppointments() {
         const appointments = data.map((appt) => ({
             ...appt,
             date: new Date(appt.date), // Convertir la cadena de fecha a objeto Date
+            clientName: appt.client_name,
+            clientEmail: appt.client_email,
+            clientPhone: appt.client_phone,
+            consultationType: appt.consultation_type,
         }))
 
         return appointments

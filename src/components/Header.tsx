@@ -20,9 +20,11 @@ export function Header() {
     { href: "#servicios", label: "Servicios" },
     { href: "#sobre-mi", label: "Sobre Mí" },
     { href: "#contacto", label: "Contacto" },
+    { href: "/admin", label: "Admin" },
   ];
 
   const isCalendarPage = pathname === "/agendar-consulta";
+  const isAdminCalendarPage = pathname.startsWith("/admin");
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-purple-100">
@@ -37,8 +39,8 @@ export function Header() {
             </Link>
           </div>
 
-          {/* Navegación y CTA - Ocultos en la página de calendario */}
-          {!isCalendarPage && (
+          {/* Navegación y CTA - Ocultos en la página de agenda y admin */}
+          {!(isCalendarPage || isAdminCalendarPage) && (
             <>
               {/* Desktop Navigation */}
               <nav className="hidden md:flex space-x-8">
@@ -78,7 +80,7 @@ export function Header() {
         </div>
 
         {/* Mobile Navigation - Oculto en la página de calendario */}
-        {isMenuOpen && !isCalendarPage && (
+        {isMenuOpen && !(isCalendarPage || isAdminCalendarPage) && (
           <div className="md:hidden py-4 border-t border-purple-100">
             <nav className="flex flex-col space-y-4">
               {navItems.map((item) => (
