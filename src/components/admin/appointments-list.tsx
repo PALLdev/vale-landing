@@ -4,7 +4,15 @@ import { Button } from "@/components/ui/button";
 import { isSameDay } from "date-fns";
 import type { es } from "date-fns/locale";
 import type { Appointment } from "@/types/calendar";
-import { Clock, Mail, Phone, User, Info, ClipboardList } from "lucide-react";
+import {
+  Clock,
+  Mail,
+  Phone,
+  User,
+  Info,
+  ClipboardList,
+  CalendarIcon,
+} from "lucide-react"; // Importar CalendarIcon
 
 interface AppointmentsListProps {
   selectedDate: Date | null;
@@ -27,20 +35,31 @@ export function AppointmentsList({
     ? appointments.filter((appt) => isSameDay(appt.date, selectedDate))
     : [];
 
+  if (!selectedDate) {
+    return (
+      <Card className="shadow-lg border-purple-100 flex items-center justify-center min-h-[200px]">
+        <CardContent className="text-center py-12">
+          <CalendarIcon className="h-12 w-12 text-purple-400 mx-auto mb-4" />
+          <p className="text-gray-500 text-lg font-medium">
+            Selecciona un día en el calendario para ver las citas agendadas.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="shadow-lg border-purple-100 min-h-[400px]">
       <CardHeader className="pb-4">
         <CardTitle className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
           <ClipboardList className="h-6 w-6 text-purple-600" />
-          {selectedDate
-            ? `Citas para el ${formatFn(selectedDate, "dd MMMM yyyy", {
-                locale: es,
-              })}`
-            : "Selecciona un día para ver las citas"}
+          {`Citas para el ${formatFn(selectedDate, "dd MMMM yyyy", {
+            locale: es,
+          })}`}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {selectedDate && filteredAppointments.length === 0 && (
+        {filteredAppointments.length === 0 && (
           <p className="text-gray-700 text-center py-4">
             No hay citas agendadas para este día.
           </p>
