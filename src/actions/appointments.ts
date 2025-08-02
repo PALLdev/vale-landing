@@ -172,3 +172,29 @@ export async function updateAppointment(
         }
     }
 }
+
+// NUEVA FUNCIÓN: Eliminar una cita existente
+export async function deleteAppointment(id: string) {
+    try {
+        const { error } = await supabase.from("appointments").delete().eq("id", id)
+
+        if (error) {
+            console.error("Supabase Error (deleteAppointment):", error)
+            return {
+                success: false,
+                message: error.message || "Failed to delete appointment",
+            }
+        }
+
+        return {
+            success: true,
+            message: "Appointment deleted successfully",
+        }
+    } catch (error) {
+        console.error("Server Action Error (deleteAppointment):", error)
+        return {
+            success: false,
+            message: "Ocurrió un error inesperado al eliminar la cita.",
+        }
+    }
+}
