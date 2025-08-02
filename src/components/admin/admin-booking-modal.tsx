@@ -13,7 +13,7 @@ import { CalendarGrid } from "@/components/calendar/calendar-grid";
 import { TimeSlotsPanel } from "@/components/calendar/time-slots-panel";
 import { AppointmentForm } from "@/components/calendar/appointment-form";
 import { Loader2 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 interface AdminBookingModalProps {
   isOpen: boolean;
@@ -47,7 +47,7 @@ export function AdminBookingModal({
     handlePrevMonth,
     handleNextMonth,
     handleDateSelect,
-    handleTimeSelect,
+    handleTimeSelect, // Mantener el original para usarlo internamente
     handleBookAppointment,
     setSelectedTime,
     setClientName,
@@ -65,6 +65,9 @@ export function AdminBookingModal({
     appointments,
     setSelectedDate, // Importar setSelectedDate del hook
   } = useCalendarLogic();
+
+  // Referencia para el panel lateral
+  const sidePanelRef = useRef<HTMLDivElement>(null);
 
   // Efecto para establecer la fecha inicial cuando el modal se abre
   useEffect(() => {
@@ -103,6 +106,31 @@ export function AdminBookingModal({
     }
   };
 
+  // Modificar handleDateSelect para incluir el scroll
+  const handleDateSelectAndScroll = (date: Date) => {
+    handleDateSelect(date); // Llama a la lógica original del hook
+    if (sidePanelRef.current) {
+      sidePanelRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
+
+  // NUEVA FUNCIÓN: Modificar handleTimeSelect para incluir el scroll
+  const handleTimeSelectAndScroll = (time: string) => {
+    handleTimeSelect(time); // Llama a la lógica original del hook
+    // Esperar un pequeño momento para que el DOM se actualice y el formulario sea visible
+    setTimeout(() => {
+      if (sidePanelRef.current) {
+        sidePanelRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+    }, 100); // Pequeño retraso para asegurar que el componente se ha renderizado
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] md:max-w-[768px] lg:max-w-[1000px] lg:pr-0 pr-2 pl-4 py-6 bg-white dark:bg-gray-800 rounded-lg shadow-xl max-h-[90vh] overflow-y-scroll">
@@ -134,7 +162,7 @@ export function AdminBookingModal({
               daysOfWeek={daysOfWeek}
               handlePrevMonth={handlePrevMonth}
               handleNextMonth={handleNextMonth}
-              handleDateSelect={handleDateSelect}
+              handleDateSelect={handleDateSelectAndScroll}
               isPast={isPast}
               isToday={isToday}
               isSameDay={isSameDay}
@@ -146,13 +174,13 @@ export function AdminBookingModal({
             />
 
             {/* Columna del Panel Lateral (Horarios O Formulario) */}
-            <div className="space-y-8">
+            <div className="space-y-8 scroll-mt-20" ref={sidePanelRef}>
               {!selectedDate || !selectedTime ? (
                 <TimeSlotsPanel
                   selectedDate={selectedDate}
                   selectedTime={selectedTime}
                   availableTimeSlots={availableTimeSlots}
-                  handleTimeSelect={handleTimeSelect}
+                  handleTimeSelect={handleTimeSelectAndScroll} // Aquí se usa la nueva función con scroll
                   format={format}
                   es={es}
                 />
