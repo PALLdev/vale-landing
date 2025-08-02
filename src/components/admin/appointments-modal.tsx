@@ -177,7 +177,7 @@ export function AppointmentModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] p-6 bg-white dark:bg-gray-800 rounded-lg shadow-xl">
+      <DialogContent className="sm:max-w-[500px] p-6 bg-white dark:bg-gray-800 rounded-lg shadow-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="border-b pb-4 mb-4">
           <DialogTitle className="text-2xl font-bold text-purple-800 dark:text-purple-300 flex items-center gap-2">
             {isViewMode ? (
