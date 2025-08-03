@@ -99,28 +99,43 @@ export function CalendarGrid({
             const isSunday = day.getDay() === 0;
             const isFullyBookedDay = isDayFullyBooked(day, appointments);
             const hasAppts = hasAppointmentsOnDay(day, appointments);
-            const isDisabled = isPastDay || isSunday;
             const isSelected = selectedDate && isSameDay(day, selectedDate);
             const isCurrentDay = isToday(day);
+
+            // Determine if the button should be disabled based on context
+            let isDisabledForClick = false;
+            if (showAppointmentIndicator) {
+              // Admin view: only Sundays are truly unclickable
+              isDisabledForClick = isSunday;
+            } else {
+              // Public booking view: past days, Sundays, and fully booked days are unclickable
+              isDisabledForClick = isPastDay || isSunday || isFullyBookedDay;
+            }
 
             let dayButtonClasses = `h-12 w-full flex flex-col items-center justify-center relative rounded-lg transition-all duration-200`;
             let dayNumberClasses = ``;
 
+            // Apply styles based on selection, current day, and availability
             if (isSelected) {
               dayButtonClasses += ` bg-purple-600 hover:bg-purple-700 shadow-md`;
               dayNumberClasses += ` text-white`;
-            } else if (isDisabled) {
+            } else if (isPastDay || isSunday || isFullyBookedDay) {
+              // Apply "not available" style
               dayButtonClasses += ` cursor-not-allowed opacity-60 bg-gray-100`;
               dayNumberClasses += ` text-gray-400`;
-            } else if (isFullyBookedDay) {
-              dayButtonClasses += ` bg-red-100 hover:bg-red-200`;
-              dayNumberClasses += ` text-gray-900`;
-            } else if (isCurrentDay) {
-              dayButtonClasses += ` border-2 border-purple-400 hover:bg-purple-50`;
-              dayNumberClasses += ` text-purple-700 font-semibold`;
             } else {
+              // Default available style
               dayButtonClasses += ` hover:bg-purple-50`;
               dayNumberClasses += ` text-gray-900`;
+            }
+
+            // Always apply current day border if it's the current day and not selected
+            if (isCurrentDay && !isSelected) {
+              dayButtonClasses += ` border-2 border-purple-400`;
+              // If it's the current day and not selected, and not disabled by past/sunday/fully booked, text is purple
+              if (!(isPastDay || isSunday || isFullyBookedDay)) {
+                dayNumberClasses = ` text-purple-700 font-semibold`;
+              }
             }
 
             return (
@@ -129,18 +144,14 @@ export function CalendarGrid({
                 variant="ghost"
                 className={dayButtonClasses}
                 onClick={() => handleDateSelect(day)}
-                disabled={isDisabled}
+                disabled={isDisabledForClick} // Use the new conditional disable
               >
                 <span className={dayNumberClasses}>{formatFn(day, "d")}</span>
                 {showAppointmentIndicator &&
                   hasAppts &&
-                  !isDisabled &&
-                  !isFullyBookedDay && (
+                  !(isPastDay || isSunday || isFullyBookedDay) && (
                     <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-purple-500 rounded-full" />
                   )}
-                {showAppointmentIndicator && hasAppts && isFullyBookedDay && (
-                  <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-red-500 rounded-full" />
-                )}
               </Button>
             );
           })}
@@ -151,10 +162,10 @@ export function CalendarGrid({
 
         {/* Leyenda del Calendario */}
         <div className="mt-8 pt-4 border-t border-gray-100 text-xs sm:text-sm text-gray-600 flex flex-wrap justify-center gap-x-0.5 sm:gap-x-6 gap-y-2">
-          {showAppointmentIndicator && ( // Conditional rendering for the legend entry
+          {showAppointmentIndicator && (
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>
-              <span>Día con citas</span>
+              <span>Día con citas (disponible)</span>
             </div>
           )}
           <div className="flex items-center gap-2">
@@ -166,12 +177,8 @@ export function CalendarGrid({
             <span>Día seleccionado</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-4 h-4 bg-red-100 rounded-lg opacity-60"></span>
-            <span>Día sin horarios</span>
-          </div>
-          <div className="flex items-center gap-2">
             <span className="w-4 h-4 bg-gray-100 rounded-lg opacity-60"></span>
-            <span>Día no disponible</span>
+            <span>Día no disponible/sin horarios</span>
           </div>
         </div>
       </CardContent>

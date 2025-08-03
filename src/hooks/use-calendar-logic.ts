@@ -22,7 +22,7 @@ import { addAppointment, getAppointments } from "@/actions/appointments"
 import { appointmentSchema } from "@/schemas/appointment"
 import { ZodError } from "zod"
 
-export function useCalendarLogic() {
+export function useCalendarLogic(isAdminView = false) {
     const [currentMonth, setCurrentMonth] = useState(new Date())
     const [selectedDate, setSelectedDate] = useState<Date | null>(null)
     const [appointments, setAppointments] = useState<Appointment[]>([])
@@ -92,8 +92,9 @@ export function useCalendarLogic() {
                 })
                 return
             }
-            // Only impede selection if it's a past day (and not today)
-            if (isPast(date) && !isToday(date)) {
+            // Para la vista pública, impide la selección de fechas pasadas (pero permite hoy)
+            // Para la vista de administrador, permite la selección de fechas pasadas para ver citas
+            if (!isAdminView && isPast(date) && !isToday(date)) {
                 toast.error("Fecha no disponible", {
                     description: "No puedes seleccionar fechas pasadas.",
                 })
@@ -103,7 +104,7 @@ export function useCalendarLogic() {
             setSelectedDate(date)
             setSelectedTime(null) // Reset selected time when date changes
         },
-        [], // No depende de appointments aquí, ya que isDayFullyBooked no impide la selección
+        [isAdminView], // Añadir isAdminView a las dependencias
     )
 
     const handleTimeSelect = useCallback((time: string) => {

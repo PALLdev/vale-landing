@@ -28,7 +28,7 @@ export function AdminCalendarPageContent() {
     isDayFullyBooked,
     setAppointments,
     setIsLoadingAppointments,
-  } = useCalendarLogic();
+  } = useCalendarLogic(true); // Pasar true para la vista de administrador
 
   const appointmentsListRef = useRef<HTMLDivElement>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);

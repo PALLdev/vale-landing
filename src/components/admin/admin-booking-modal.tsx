@@ -64,7 +64,7 @@ export function AdminBookingModal({
     isDayFullyBooked,
     appointments,
     setSelectedDate, // Importar setSelectedDate del hook
-  } = useCalendarLogic();
+  } = useCalendarLogic(true); // Pasar true para la vista de administrador
 
   // Referencia para el panel lateral
   const sidePanelRef = useRef<HTMLDivElement>(null);

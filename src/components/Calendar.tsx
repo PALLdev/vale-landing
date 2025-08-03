@@ -42,7 +42,7 @@ export function CalendarSystem() {
     es,
     isDayFullyBooked,
     appointments,
-  } = useCalendarLogic();
+  } = useCalendarLogic(false); // Pasar false para la vista pública
 
   // Referencia para el panel lateral
   const sidePanelRef = useRef<HTMLDivElement>(null);
