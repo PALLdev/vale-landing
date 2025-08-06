@@ -76,11 +76,11 @@ export function Header() {
     { href: "#contacto", label: "Contacto" },
   ];
 
-  const isCalendarPage = pathname === "/agendar-consulta";
+  const isPublicCalendarPage = pathname === "/agendar-consulta";
   const isAdminContentPage =
     pathname.startsWith("/admin") && pathname !== "/admin/login";
   const isLoginPage = pathname === "/admin/login";
-  const isPublicPage = !(isCalendarPage || isAdminContentPage || isLoginPage);
+  const isPublicPage = !(isAdminContentPage || isLoginPage);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-purple-100">
@@ -100,13 +100,13 @@ export function Header() {
             {isPublicPage && (
               <>
                 {navItems.map((item) => (
-                  <a
+                  <Link
                     key={item.href}
                     href={item.href}
                     className="text-gray-700 hover:text-purple-600 transition-colors duration-200 font-medium"
                   >
                     {item.label}
-                  </a>
+                  </Link>
                 ))}
                 <Link
                   href="/admin/login"
@@ -144,15 +144,17 @@ export function Header() {
           </nav>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-gray-700 hover:text-purple-600 transition-colors"
-              aria-label="Toggle menu"
-            >
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
+          {!isLoginPage && (
+            <div className="md:hidden">
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="text-gray-700 hover:text-purple-600 transition-colors"
+                aria-label="Toggle menu"
+              >
+                {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Mobile Navigation - Only visible when menu is open */}
@@ -162,14 +164,14 @@ export function Header() {
               {isPublicPage && (
                 <>
                   {navItems.map((item) => (
-                    <a
+                    <Link
                       key={item.href}
                       href={item.href}
                       className="text-gray-700 hover:text-purple-600 transition-colors duration-200 font-medium"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       {item.label}
-                    </a>
+                    </Link>
                   ))}
                   <Link
                     href="/admin/login"
@@ -192,7 +194,7 @@ export function Header() {
                 </>
               )}
 
-              {isAdminContentPage && isLoggedIn && (
+              {isLoggedIn && isAdminContentPage && (
                 <Button
                   variant="ghost"
                   onClick={handleLogout}
