@@ -66,7 +66,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex-grow flex items-center justify-center pt-22 pb-14 bg-gradient-to-br from-purple-50 via-white to-indigo-50 min-h-screen">
-      <Card className="w-full max-w-md shadow-lg border-purple-100">
+      <Card className="w-full max-w-md shadow-lg border-purple-100 mx-4 sm:mx-0">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold text-gray-900">
             Acceso de Administrador
