@@ -226,7 +226,7 @@ export function useCalendarLogic(isAdminView = false) {
                 })
 
                 // --- NUEVA FUNCIONALIDAD: Notificación al Administrador vía WhatsApp ---
-                const adminWhatsAppNumber = "56912345678"; // REEMPLAZA CON EL NÚMERO DE WHATSAPP DEL ADMINISTRADOR (con código de país, sin +)
+                const adminWhatsAppNumber = "56958569502";
                 const formattedDate = format(selectedDate, "dd/MM/yyyy", { locale: es });
                 const message = encodeURIComponent(
                     `¡Nueva cita agendada!\n\n` +
