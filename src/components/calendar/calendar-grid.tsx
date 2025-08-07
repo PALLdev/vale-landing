@@ -121,7 +121,7 @@ export function CalendarGrid({
               dayNumberClasses += ` text-white`;
             } else if (isPastDay || isSunday || isFullyBookedDay) {
               // Apply "not available" style
-              dayButtonClasses += ` cursor-not-allowed opacity-60 bg-gray-100`;
+              dayButtonClasses += ` opacity-60 bg-gray-100`;
               dayNumberClasses += ` text-gray-400`;
             } else {
               // Default available style
