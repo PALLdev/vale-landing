@@ -6,42 +6,20 @@ import { Menu, X, LogOut, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { getClientSupabase } from "@/lib/supabase/client";
 import { signOut } from "@/actions/auth";
 import { toast } from "sonner";
-import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
+import { useAuthSession } from "@/hooks/use-auth-session"; // Importar el nuevo hook
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const supabase = getClientSupabase();
 
-  // Check auth status on mount and on auth state changes
-  useEffect(() => {
-    const checkAuth = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setIsLoggedIn(!!user);
-    };
+  // Usar el nuevo hook para gestionar la sesión de autenticación
+  const { user, isLoading } = useAuthSession();
 
-    checkAuth();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event: AuthChangeEvent, session: Session | null) => {
-        setIsLoggedIn(!!session?.user);
-      }
-    );
-
-    return () => {
-      authListener.unsubscribe();
-    };
-  }, [supabase]);
-
-  // Close menu when route changes
+  // Cerrar menú cuando la ruta cambia
   useEffect(() => {
     setIsMenuOpen(false);
   }, [pathname]);
@@ -53,7 +31,7 @@ export function Header() {
       toast.success("Sesión cerrada", {
         description: "Has cerrado tu sesión exitosamente.",
       });
-      router.push("/admin/login");
+      // La redirección es manejada por la Server Action
     } catch (error) {
       console.error(
         "Logout process caught an error (likely a redirect):",
@@ -114,36 +92,49 @@ export function Header() {
                 >
                   Admin
                 </Link>
-                <Button
-                  className="bg-purple-600 hover:bg-purple-700 text-white"
-                  asChild
-                >
-                  <Link href="/agendar-consulta">Agendar Consulta</Link>
-                </Button>
+                {!isPublicCalendarPage && (
+                  <Button
+                    className="bg-purple-600 hover:bg-purple-700 text-white"
+                    asChild
+                  >
+                    <Link href="/agendar-consulta">Agendar Consulta</Link>
+                  </Button>
+                )}
               </>
             )}
 
-            {isAdminContentPage && isLoggedIn && (
-              <Button
-                variant="ghost"
-                onClick={handleLogout}
-                disabled={isLoggingOut}
-                className="text-gray-700 hover:text-purple-600 transition-colors duration-200 font-medium"
-              >
-                {isLoggingOut ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <LogOut className="mr-2 h-4 w-4" />
-                )}
-                Cerrar Sesión
-              </Button>
+            {isAdminContentPage && (
+              <div className="flex items-center">
+                {
+                  isLoading ? (
+                    // Muestra un spinner mientras se carga la sesión
+                    <Loader2 className="h-5 w-5 animate-spin text-purple-600" />
+                  ) : user ? ( // Muestra el botón si hay un usuario logueado
+                    <Button
+                      variant="ghost"
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
+                      className="text-gray-700 hover:text-purple-600 transition-colors duration-200 font-medium"
+                    >
+                      {isLoggingOut ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Cerrando sesión...
+                        </>
+                      ) : (
+                        <>
+                          <LogOut className="mr-2 h-4 w-4" />
+                          Cerrar Sesión
+                        </>
+                      )}
+                    </Button>
+                  ) : null // Si no está cargando y no hay usuario, no muestra nada (el middleware redirige)
+                }
+              </div>
             )}
-
-            {/* On login page, no extra links needed in header */}
-            {/* On calendar page, no extra "Agendar Consulta" button needed */}
           </nav>
 
-          {/* Mobile menu button */}
+          {/* Botón de menú móvil */}
           {!isLoginPage && (
             <div className="md:hidden">
               <button
@@ -157,7 +148,7 @@ export function Header() {
           )}
         </div>
 
-        {/* Mobile Navigation - Only visible when menu is open */}
+        {/* Navegación móvil - Solo visible cuando el menú está abierto */}
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-purple-100">
             <nav className="flex flex-col space-y-4">
@@ -180,38 +171,48 @@ export function Header() {
                   >
                     Admin
                   </Link>
-                  <Button
-                    className="bg-purple-600 hover:bg-purple-700 text-white mt-4"
-                    asChild
-                  >
-                    <Link
-                      href="/agendar-consulta"
-                      onClick={() => setIsMenuOpen(false)}
+                  {!isPublicCalendarPage && (
+                    <Button
+                      className="bg-purple-600 hover:bg-purple-700 text-white mt-4"
+                      asChild
                     >
-                      Agendar Consulta
-                    </Link>
-                  </Button>
+                      <Link
+                        href="/agendar-consulta"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Agendar Consulta
+                      </Link>
+                    </Button>
+                  )}
                 </>
               )}
 
-              {isLoggedIn && isAdminContentPage && (
-                <Button
-                  variant="ghost"
-                  onClick={handleLogout}
-                  disabled={isLoggingOut}
-                  className="text-gray-700 hover:text-purple-600 transition-colors duration-200 font-medium"
-                >
-                  {isLoggingOut ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <LogOut className="mr-2 h-4 w-4" />
-                  )}
-                  Cerrar Sesión
-                </Button>
+              {isAdminContentPage && (
+                <div className="flex items-center">
+                  {isLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-purple-600" />
+                  ) : user ? (
+                    <Button
+                      variant="ghost"
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
+                      className="text-gray-700 hover:text-purple-600 transition-colors duration-200 font-medium"
+                    >
+                      {isLoggingOut ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Cerrando sesión...
+                        </>
+                      ) : (
+                        <>
+                          <LogOut className="mr-2 h-4 w-4" />
+                          Cerrar Sesión
+                        </>
+                      )}
+                    </Button>
+                  ) : null}
+                </div>
               )}
-
-              {/* On login page, no extra links needed in header */}
-              {/* On calendar page, no extra "Agendar Consulta" button needed */}
             </nav>
           </div>
         )}
