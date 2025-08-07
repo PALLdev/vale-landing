@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react";
 import type { Locale } from "date-fns";
-import { isSameMonth, format } from "date-fns";
+import { isSameMonth, format, isAfter, startOfMonth } from "date-fns"; // Importar isAfter
 import type { Appointment } from "@/types/calendar";
 import { hasAppointmentsOnDay } from "@/lib/calendar-helpers";
 
@@ -27,7 +27,8 @@ interface CalendarGridProps {
   es: Locale;
   isDayFullyBooked: (date: Date, allAppointments: Appointment[]) => boolean;
   appointments: Appointment[];
-  showAppointmentIndicator: boolean; // New prop
+  showAppointmentIndicator: boolean;
+  maxSelectableDate: Date;
 }
 
 export function CalendarGrid({
@@ -46,13 +47,28 @@ export function CalendarGrid({
   es,
   isDayFullyBooked,
   appointments,
-  showAppointmentIndicator, // Destructure new prop
+  showAppointmentIndicator,
+  maxSelectableDate,
 }: CalendarGridProps) {
   const today = new Date();
 
   const totalCellsInGrid = 42;
   const daysRendered = startingDayIndex + daysInMonth.length;
   const trailingEmptyCells = totalCellsInGrid - daysRendered;
+
+  // Validación defensiva para asegurar que maxSelectableDate es un objeto Date válido
+  const safeMaxSelectableDate =
+    maxSelectableDate instanceof Date && !isNaN(maxSelectableDate.getTime())
+      ? maxSelectableDate
+      : new Date(); // Fallback a la fecha actual si no es válido
+
+  // Determinar si el botón de "siguiente mes" debe estar deshabilitado
+  // Se deshabilita si el mes actual es el mismo que el mes de safeMaxSelectableDate
+  // Usamos startOfMonth para asegurar que la comparación sea solo por mes y año
+  const isNextMonthDisabled = isSameMonth(
+    startOfMonth(currentMonth),
+    startOfMonth(safeMaxSelectableDate)
+  );
 
   return (
     <Card className="shadow-lg border-purple-100 h-[650px]">
@@ -74,9 +90,14 @@ export function CalendarGrid({
           <h3 className="text-xl font-semibold text-gray-900 capitalize">
             {formatFn(currentMonth, "MMMM yyyy", { locale: es })}
           </h3>
-          <Button variant="ghost" size="icon" onClick={handleNextMonth}>
-            <ChevronRight className="h-5 w-5 text-purple-600" />
-          </Button>
+          {/* Condicionalmente renderizar el botón de siguiente mes */}
+          {!isNextMonthDisabled && (
+            <Button variant="ghost" size="icon" onClick={handleNextMonth}>
+              <ChevronRight className="h-5 w-5 text-purple-600" />
+            </Button>
+          )}
+          {isNextMonthDisabled && <div className="w-10"></div>}{" "}
+          {/* Espaciador para mantener el diseño */}
         </div>
 
         {/* Días de la Semana */}
@@ -101,15 +122,17 @@ export function CalendarGrid({
             const hasAppts = hasAppointmentsOnDay(day, appointments);
             const isSelected = selectedDate && isSameDay(day, selectedDate);
             const isCurrentDay = isToday(day);
+            const isBeyondMaxDate = isAfter(day, safeMaxSelectableDate); // Nuevo: si el día está más allá del límite
 
             // Determine if the button should be disabled based on context
             let isDisabledForClick = false;
             if (showAppointmentIndicator) {
-              // Admin view: only Sundays are truly unclickable
-              isDisabledForClick = isSunday;
+              // Admin view: Sundays and beyond max date are truly unclickable for new bookings
+              isDisabledForClick = isSunday || isBeyondMaxDate;
             } else {
-              // Public booking view: past days, Sundays, and fully booked days are unclickable
-              isDisabledForClick = isPastDay || isSunday || isFullyBookedDay;
+              // Public booking view: past days, Sundays, fully booked days, and beyond max date are unclickable
+              isDisabledForClick =
+                isPastDay || isSunday || isFullyBookedDay || isBeyondMaxDate;
             }
 
             let dayButtonClasses = `h-12 w-full flex flex-col items-center justify-center relative rounded-lg transition-all duration-200`;
@@ -119,9 +142,15 @@ export function CalendarGrid({
             if (isSelected) {
               dayButtonClasses += ` bg-purple-600 hover:bg-purple-700 shadow-md`;
               dayNumberClasses += ` text-white`;
-            } else if (isPastDay || isSunday || isFullyBookedDay) {
+            } else if (
+              isPastDay ||
+              isSunday ||
+              isFullyBookedDay ||
+              isBeyondMaxDate
+            ) {
+              // Incluir isBeyondMaxDate en el estilo de no disponible
               // Apply "not available" style
-              dayButtonClasses += ` opacity-60 bg-gray-100`;
+              dayButtonClasses += ` cursor-not-allowed opacity-60 bg-gray-100`;
               dayNumberClasses += ` text-gray-400`;
             } else {
               // Default available style
@@ -132,8 +161,10 @@ export function CalendarGrid({
             // Always apply current day border if it's the current day and not selected
             if (isCurrentDay && !isSelected) {
               dayButtonClasses += ` border-2 border-purple-400`;
-              // If it's the current day and not selected, and not disabled by past/sunday/fully booked, text is purple
-              if (!(isPastDay || isSunday || isFullyBookedDay)) {
+              // If it's the current day and not selected, and not disabled by past/sunday/fully booked/beyond max date, text is purple
+              if (
+                !(isPastDay || isSunday || isFullyBookedDay || isBeyondMaxDate)
+              ) {
                 dayNumberClasses = ` text-purple-700 font-semibold`;
               }
             }
@@ -149,7 +180,12 @@ export function CalendarGrid({
                 <span className={dayNumberClasses}>{formatFn(day, "d")}</span>
                 {showAppointmentIndicator &&
                   hasAppts &&
-                  !(isPastDay || isSunday || isFullyBookedDay) && (
+                  !(
+                    isPastDay ||
+                    isSunday ||
+                    isFullyBookedDay ||
+                    isBeyondMaxDate
+                  ) && ( // Solo mostrar indicador si es seleccionable
                     <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-purple-500 rounded-full" />
                   )}
               </Button>

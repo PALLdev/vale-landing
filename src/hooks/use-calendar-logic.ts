@@ -6,13 +6,15 @@ import { useState, useMemo, useCallback, useEffect } from "react"
 import {
     format,
     startOfMonth,
-    endOfMonth,
+    endOfMonth, // Importar endOfMonth
     eachDayOfInterval,
     isSameDay,
     isPast,
     addMonths,
     subMonths,
     isToday,
+    isAfter,
+    isSameMonth,
 } from "date-fns"
 import { es } from "date-fns/locale"
 import { toast } from "sonner"
@@ -37,6 +39,12 @@ export function useCalendarLogic(isAdminView = false) {
     const [consultationType, setConsultationType] = useState<"ingreso" | "seguimiento" | "">("")
     const [notes, setNotes] = useState("")
     const [formErrors, setFormErrors] = useState<{ [key: string]: string[] | undefined }>({})
+
+    // Calcular la fecha máxima seleccionable: hoy + 6 meses, y tomar el final de ese mes.
+    // Ejemplo: Si hoy es 7 de agosto de 2025, 6 meses después es 7 de febrero de 2026.
+    // endOfMonth(7 de febrero de 2026) será 28 de febrero de 2026.
+    const maxSelectableDate = useMemo(() => endOfMonth(addMonths(new Date(), 6)), []);
+
 
     // Cargar citas al montar el componente
     useEffect(() => {
@@ -67,6 +75,7 @@ export function useCalendarLogic(isAdminView = false) {
     // Calcular el índice del primer día de la semana (Lunes = 0)
     const startingDayIndex = (firstDayOfMonth.getDay() - 1 + 7) % 7
 
+    // Reordenar los días de la semana para que empiecen en Lunes
     const daysOfWeek = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
 
     const handlePrevMonth = useCallback(() => {
@@ -76,10 +85,18 @@ export function useCalendarLogic(isAdminView = false) {
     }, [])
 
     const handleNextMonth = useCallback(() => {
+        // Impedir avanzar si el mes actual es el mismo que el mes de maxSelectableDate
+        // Ahora, maxSelectableDate es el final del mes, así que la comparación es directa.
+        if (isSameMonth(currentMonth, maxSelectableDate)) {
+            toast.info("Límite de agendamiento", {
+                description: "Solo puedes agendar citas con hasta 6 meses de anticipación.",
+            });
+            return;
+        }
         setCurrentMonth((prev) => addMonths(prev, 1))
         setSelectedDate(null)
         setSelectedTime(null)
-    }, [])
+    }, [currentMonth, maxSelectableDate])
 
     const handleDateSelect = useCallback(
         (date: Date) => {
@@ -99,11 +116,19 @@ export function useCalendarLogic(isAdminView = false) {
                 })
                 return
             }
+            // Impedir la selección de fechas futuras más allá del límite (fin del 6º mes)
+            if (isAfter(date, maxSelectableDate)) {
+                toast.error("Fecha fuera de rango", {
+                    description: "Solo puedes agendar citas con hasta 6 meses de anticipación.",
+                });
+                return;
+            }
+
             // Si el día está completamente agendado, se puede seleccionar, pero el panel de horarios mostrará que no hay disponibilidad.
             setSelectedDate(date)
             setSelectedTime(null) // Reset selected time when date changes
         },
-        [isAdminView], // Añadir isAdminView a las dependencias
+        [isAdminView, maxSelectableDate],
     )
 
     const handleTimeSelect = useCallback((time: string) => {
@@ -159,6 +184,15 @@ export function useCalendarLogic(isAdminView = false) {
                 return false
             }
 
+            // También validar la fecha seleccionada contra maxSelectableDate aquí
+            if (isAfter(selectedDate, maxSelectableDate)) {
+                toast.error("Fecha fuera de rango", {
+                    description: "Solo puedes agendar citas con hasta 6 meses de anticipación.",
+                });
+                return false;
+            }
+
+
             setIsBooking(true) // Iniciar estado de carga del botón
 
             const newAppointmentData = {
@@ -192,7 +226,7 @@ export function useCalendarLogic(isAdminView = false) {
                 })
 
                 // --- NUEVA FUNCIONALIDAD: Notificación al Administrador vía WhatsApp ---
-                const adminWhatsAppNumber = "56958569502"; // WHATSAPP DEL ADMINISTRADOR (con código de país, sin +)
+                const adminWhatsAppNumber = "56912345678"; // REEMPLAZA CON EL NÚMERO DE WHATSAPP DEL ADMINISTRADOR (con código de país, sin +)
                 const formattedDate = format(selectedDate, "dd/MM/yyyy", { locale: es });
                 const message = encodeURIComponent(
                     `¡Nueva cita agendada!\n\n` +
@@ -203,7 +237,7 @@ export function useCalendarLogic(isAdminView = false) {
                     `*Hora:* ${selectedTime}\n` +
                     `*Tipo:* ${consultationType === "ingreso" ? "Ingreso" : "Seguimiento"}\n` +
                     (notes ? `*Notas:* ${notes}\n\n` : "\n") +
-                    `Por favor, revisa y confirma la cita.`
+                    `Por favor, revisa y confirma la cita en el panel de administración.`
                 );
                 const whatsappLink = `https://wa.me/${adminWhatsAppNumber}?text=${message}`;
 
@@ -236,7 +270,7 @@ export function useCalendarLogic(isAdminView = false) {
                 return false // Indicar fallo
             }
         },
-        [validateForm, selectedDate, selectedTime, clientName, clientEmail, clientPhone, consultationType, notes],
+        [validateForm, selectedDate, selectedTime, clientName, clientEmail, clientPhone, consultationType, notes, maxSelectableDate],
     )
 
     return {
@@ -278,5 +312,6 @@ export function useCalendarLogic(isAdminView = false) {
         isDayFullyBooked,
         setAppointments,
         setIsLoadingAppointments,
+        maxSelectableDate, // Exportar maxSelectableDate
     }
 }

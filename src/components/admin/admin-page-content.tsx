@@ -28,6 +28,7 @@ export function AdminCalendarPageContent() {
     isDayFullyBooked,
     setAppointments,
     setIsLoadingAppointments,
+    maxSelectableDate, // Importar maxSelectableDate
   } = useCalendarLogic(true); // Pasar true para la vista de administrador
 
   const appointmentsListRef = useRef<HTMLDivElement>(null);
@@ -104,6 +105,7 @@ export function AdminCalendarPageContent() {
           isDayFullyBooked={isDayFullyBooked}
           appointments={appointments}
           showAppointmentIndicator={true}
+          maxSelectableDate={maxSelectableDate} // Pasar maxSelectableDate
         />
 
         <div className="space-y-8 scroll-mt-20" ref={appointmentsListRef}>

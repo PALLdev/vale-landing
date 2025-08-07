@@ -64,6 +64,7 @@ export function AdminBookingModal({
     isDayFullyBooked,
     appointments,
     setSelectedDate, // Importar setSelectedDate del hook
+    maxSelectableDate, // Importar maxSelectableDate
   } = useCalendarLogic(true); // Pasar true para la vista de administrador
 
   // Referencia para el panel lateral
@@ -171,6 +172,7 @@ export function AdminBookingModal({
               isDayFullyBooked={isDayFullyBooked}
               appointments={appointments}
               showAppointmentIndicator={true}
+              maxSelectableDate={maxSelectableDate} // Pasar maxSelectableDate
             />
 
             {/* Columna del Panel Lateral (Horarios O Formulario) */}

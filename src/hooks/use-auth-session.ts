@@ -5,9 +5,9 @@ import type { User, AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { usePathname } from "next/navigation"; // Importar usePathname
 
 /**
- * Custom hook to manage Supabase authentication session on the client side.
- * Provides the current user and a loading state.
- */
+* Custom hook to manage Supabase authentication session on the client side.
+* Provides the current user and a loading state.
+*/
 export function useAuthSession() {
     // user: undefined = cargando, null = no logueado, User = logueado
     const [user, setUser] = useState<User | null | undefined>(undefined);
@@ -31,11 +31,9 @@ export function useAuthSession() {
         getInitialSession(); // Ejecutar al montar el componente y cuando las dependencias cambian
 
         // Suscribirse a cambios de autenticación
-        // CORRECCIÓN AQUÍ: Desestructurar 'subscription' de 'data'
         const { data: { subscription: authListener } } = supabase.auth.onAuthStateChange(
             (_event: AuthChangeEvent, session: Session | null) => {
                 if (isMounted) {
-                    console.log("Auth event:", _event, "Session:", session); // Para depuración
                     setUser(session?.user || null);
                     setIsLoading(false); // Asegurarse de que isLoading se desactive en cualquier cambio de auth
                 }

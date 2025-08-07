@@ -33,12 +33,12 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
-import { format, isPast, isToday } from "date-fns";
+import { format, isPast, isToday, addMonths, isAfter } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
 import { appointmentSchema } from "@/schemas/appointment";
 import { ZodError } from "zod";
-import type { Appointment } from "@/types/calendar"; // Aseguramos la importación correcta
+import type { Appointment } from "@/types/calendar";
 import { updateAppointment } from "@/actions/appointments";
 import { generateTimeSlots } from "@/lib/calendar-helpers";
 import {
@@ -83,6 +83,9 @@ export function AppointmentModal({
   const [isTimeSelectOpen, setIsTimeSelectOpen] = useState(false);
 
   const timeSelectTriggerRef = useRef<HTMLButtonElement>(null);
+
+  // Calcular la fecha máxima de agendamiento para el modal
+  const maxBookingDate = useMemo(() => addMonths(new Date(), 6), []);
 
   useEffect(() => {
     if (appointment) {
@@ -146,6 +149,15 @@ export function AppointmentModal({
           description: "Ocurrió un error durante la validación del formulario.",
         });
       }
+      return;
+    }
+
+    // Validar también aquí la fecha seleccionada contra el límite de 6 meses
+    if (isAfter(selectedDate, maxBookingDate)) {
+      toast.error("Fecha fuera de rango", {
+        description:
+          "Solo puedes agendar citas con hasta 6 meses de anticipación.",
+      });
       return;
     }
 
@@ -251,11 +263,12 @@ export function AppointmentModal({
                         if (date) {
                           if (
                             (isPast(date) && !isToday(date)) ||
-                            date.getDay() === 0
+                            date.getDay() === 0 ||
+                            isAfter(date, maxBookingDate)
                           ) {
                             toast.error("Fecha no disponible", {
                               description:
-                                "No puedes seleccionar fechas pasadas o domingos.",
+                                "No puedes seleccionar fechas pasadas, domingos o con más de 6 meses de anticipación.",
                             });
                             return;
                           }
@@ -274,7 +287,9 @@ export function AppointmentModal({
                       initialFocus
                       locale={es}
                       disabled={(date) =>
-                        (isPast(date) && !isToday(date)) || date.getDay() === 0
+                        (isPast(date) && !isToday(date)) ||
+                        date.getDay() === 0 ||
+                        isAfter(date, maxBookingDate)
                       }
                     />
                   </PopoverContent>
