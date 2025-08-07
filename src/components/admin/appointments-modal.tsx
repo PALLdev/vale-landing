@@ -13,7 +13,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -21,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import {
   Loader2,
   User,
@@ -30,13 +30,15 @@ import {
   Clock,
   CalendarIcon,
   ClipboardList,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { format, isPast, isToday } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
 import { appointmentSchema } from "@/schemas/appointment";
 import { ZodError } from "zod";
-import type { Appointment } from "@/types/calendar";
+import type { Appointment } from "@/types/calendar"; // Aseguramos la importación correcta
 import { updateAppointment } from "@/actions/appointments";
 import { generateTimeSlots } from "@/lib/calendar-helpers";
 import {
@@ -467,6 +469,35 @@ export function AppointmentModal({
               </p>
             )}
           </div>
+
+          {/* Estado de la cita (Solo vista) */}
+          {isViewMode && (
+            <div>
+              <Label
+                htmlFor="appointment-status"
+                className="text-gray-700 dark:text-gray-300 flex items-center gap-1"
+              >
+                Estado de la Cita
+              </Label>
+              <div className="mt-1">
+                {appointment.status === "pendiente" && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                    <Clock className="h-4 w-4 mr-1" /> Pendiente
+                  </span>
+                )}
+                {appointment.status === "confirmada" && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                    <CheckCircle2 className="h-4 w-4 mr-1" /> Confirmada
+                  </span>
+                )}
+                {appointment.status === "cancelada" && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                    <XCircle className="h-4 w-4 mr-1" /> Cancelada
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Notas Adicionales */}
           <div>

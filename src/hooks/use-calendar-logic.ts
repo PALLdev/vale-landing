@@ -67,7 +67,6 @@ export function useCalendarLogic(isAdminView = false) {
     // Calcular el índice del primer día de la semana (Lunes = 0)
     const startingDayIndex = (firstDayOfMonth.getDay() - 1 + 7) % 7
 
-    // Reordenar los días de la semana para que empiecen en Lunes
     const daysOfWeek = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
 
     const handlePrevMonth = useCallback(() => {
@@ -185,12 +184,32 @@ export function useCalendarLogic(isAdminView = false) {
                 const addedAppointment: Appointment = {
                     ...newAppointmentData,
                     id: response.id!,
-                    status: "pendiente",
+                    status: "pendiente", // Las citas nuevas siempre son pendientes
                 }
                 setAppointments((prev) => [...prev, addedAppointment])
                 toast.success("Cita Agendada con Éxito", {
                     description: `Tu cita para el ${format(selectedDate, "dd/MM/yyyy", { locale: es })} a las ${selectedTime} ha sido agendada. Recibirás un email de confirmación.`,
                 })
+
+                // --- NUEVA FUNCIONALIDAD: Notificación al Administrador vía WhatsApp ---
+                const adminWhatsAppNumber = "56912345678"; // REEMPLAZA CON EL NÚMERO DE WHATSAPP DEL ADMINISTRADOR (con código de país, sin +)
+                const formattedDate = format(selectedDate, "dd/MM/yyyy", { locale: es });
+                const message = encodeURIComponent(
+                    `¡Nueva cita agendada!\n\n` +
+                    `*Cliente:* ${clientName}\n` +
+                    `*Email:* ${clientEmail}\n` +
+                    `*Teléfono:* ${clientPhone}\n` +
+                    `*Fecha:* ${formattedDate}\n` +
+                    `*Hora:* ${selectedTime}\n` +
+                    `*Tipo:* ${consultationType === "ingreso" ? "Ingreso" : "Seguimiento"}\n` +
+                    (notes ? `*Notas:* ${notes}\n\n` : "\n") +
+                    `Por favor, revisa y confirma la cita.`
+                );
+                const whatsappLink = `https://wa.me/${adminWhatsAppNumber}?text=${message}`;
+
+                // Abrir WhatsApp en una nueva pestaña
+                window.open(whatsappLink, "_blank");
+                // --- FIN NUEVA FUNCIONALIDAD ---
 
                 // Reset form
                 setClientName("")

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { isSameDay } from "date-fns";
 import type { es } from "date-fns/locale";
-import type { Appointment } from "@/types/calendar";
+import type { Appointment } from "@/types/calendar"; // Aseguramos la importación correcta
 import {
   Clock,
   Mail,
@@ -18,6 +18,9 @@ import {
   Loader2,
   PlusCircle,
   CalendarIcon,
+  CheckCircle2,
+  XCircle,
+  MessageCircle,
 } from "lucide-react";
 import { AppointmentModal } from "@/components/admin/appointments-modal";
 import {
@@ -31,7 +34,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { deleteAppointment } from "@/actions/appointments";
+import {
+  deleteAppointment,
+  updateAppointmentStatus,
+} from "@/actions/appointments"; // Importar nueva acción
 
 interface AppointmentsListProps {
   selectedDate: Date | null;
@@ -63,6 +69,16 @@ export function AppointmentsList({
   const [appointmentToDelete, setAppointmentToDelete] =
     useState<Appointment | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const [isConfirming, setIsConfirming] = useState(false); // Nuevo estado para confirmar
+  const [isCancelling, setIsCancelling] = useState(false); // Nuevo estado para cancelar
+  const [appointmentToConfirmOrCancel, setAppointmentToConfirmOrCancel] =
+    useState<Appointment | null>(null);
+  const [isStatusChangeDialogOpen, setIsStatusChangeDialogOpen] =
+    useState(false);
+  const [statusChangeType, setStatusChangeType] = useState<
+    "confirm" | "cancel" | null
+  >(null);
 
   const filteredAppointments = selectedDate
     ? appointments.filter((appt) => isSameDay(appt.date, selectedDate))
@@ -112,6 +128,77 @@ export function AppointmentsList({
     setAppointmentToDelete(null);
   };
 
+  // --- NUEVAS FUNCIONES PARA CONFIRMAR/CANCELAR ---
+  const handleStatusChangeClick = (
+    appointment: Appointment,
+    type: "confirm" | "cancel"
+  ) => {
+    setAppointmentToConfirmOrCancel(appointment);
+    setStatusChangeType(type);
+    setIsStatusChangeDialogOpen(true);
+  };
+
+  const handleConfirmStatusChange = async () => {
+    if (!appointmentToConfirmOrCancel || !statusChangeType) return;
+
+    const appointment = appointmentToConfirmOrCancel;
+    const newStatus =
+      statusChangeType === "confirm" ? "confirmada" : "cancelada";
+    const isConfirmAction = statusChangeType === "confirm";
+
+    isConfirmAction ? setIsConfirming(true) : setIsCancelling(true);
+
+    const response = await updateAppointmentStatus(appointment.id, newStatus);
+
+    isConfirmAction ? setIsConfirming(false) : setIsCancelling(false);
+    setIsStatusChangeDialogOpen(false);
+
+    if (response.success) {
+      toast.success(isConfirmAction ? "Cita Confirmada" : "Cita Cancelada", {
+        description: `La cita de ${appointment.clientName} ha sido ${
+          isConfirmAction ? "confirmada" : "cancelada"
+        } exitosamente.`,
+      });
+      onAppointmentUpdated(); // Recargar la lista de citas
+
+      // --- Envío de WhatsApp al Cliente ---
+      const clientPhone = appointment.clientPhone;
+      const formattedDate = formatFn(appointment.date, "dd MMMM yyyy", {
+        locale: es,
+      });
+      const message = encodeURIComponent(
+        isConfirmAction
+          ? `¡Hola ${
+              appointment.clientName
+            }!\n\nTu cita nutricional ha sido *CONFIRMADA*.\n\n*Detalles:*\nFecha: ${formattedDate}\nHora: ${
+              appointment.time
+            }\nTipo: ${
+              appointment.consultationType === "ingreso"
+                ? "Ingreso"
+                : "Seguimiento"
+            }\n\n¡Te esperamos!`
+          : `¡Hola ${appointment.clientName}!\n\nTu cita nutricional para el ${formattedDate} a las ${appointment.time} ha sido *CANCELADA*.\n\nSi deseas reagendar, por favor visita nuestra página de agendamiento.`
+      );
+      const whatsappLink = `https://wa.me/${clientPhone}?text=${message}`;
+      window.open(whatsappLink, "_blank");
+      // --- Fin Envío de WhatsApp ---
+    } else {
+      toast.error(
+        isConfirmAction ? "Error al Confirmar Cita" : "Error al Cancelar Cita",
+        {
+          description:
+            response.message ||
+            `No se pudo ${
+              isConfirmAction ? "confirmar" : "cancelar"
+            } la cita. Intenta de nuevo.`,
+        }
+      );
+    }
+    setAppointmentToConfirmOrCancel(null);
+    setStatusChangeType(null);
+  };
+  // --- FIN NUEVAS FUNCIONES ---
+
   return (
     <>
       <Card
@@ -145,80 +232,130 @@ export function AppointmentsList({
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {filteredAppointments.map((appt) => (
-                    <Card key={appt.id} className="border-gray-200 shadow-sm">
-                      <CardContent className="p-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                          {/* Hora */}
-                          <div className="flex items-center min-w-0">
-                            <Clock className="h-4 w-4 text-purple-500 mr-2" />
-                            <span className="font-semibold">{appt.time}</span>
-                          </div>
-                          {/* Nombre Completo */}
-                          <div className="flex items-center min-w-0">
-                            <User className="h-4 w-4 text-purple-500 mr-2" />
-                            <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap flex-1 w-0">
-                              {appt.clientName}
-                            </span>
-                          </div>
-                          {/* Email */}
-                          <div className="flex items-center min-w-0">
-                            <Mail className="h-4 w-4 text-purple-500 mr-2" />
-                            <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap flex-1 w-0">
-                              {appt.clientEmail}
-                            </span>
-                          </div>
-                          {/* Teléfono */}
-                          <div className="flex items-center min-w-0">
-                            <Phone className="h-4 w-4 text-purple-500 mr-2" />
-                            <span>{appt.clientPhone}</span>
-                          </div>
-                          {/* Tipo de Consulta */}
-                          <div className="flex items-center col-span-full min-w-0">
-                            <Info className="h-4 w-4 text-purple-500 mr-2" />
-                            <span>
-                              Tipo:{" "}
-                              {appt.consultationType === "ingreso"
-                                ? "Ingreso"
-                                : "Seguimiento"}
-                            </span>
-                          </div>
-                          {/* Notas Adicionales */}
-                          {appt.notes && (
-                            <div className="flex items-start gap-2 col-span-full min-w-0">
-                              <ClipboardList className="h-4 w-4 text-purple-500 mt-1" />
-                              <p className="flex-1 w-0 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
-                                Notas: {appt.notes}
-                              </p>
+                  {filteredAppointments.map(
+                    (
+                      appt: Appointment // Explicitly type appt here
+                    ) => (
+                      <Card key={appt.id} className="border-gray-200 shadow-sm">
+                        <CardContent className="p-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                            {/* Hora */}
+                            <div className="flex items-center min-w-0">
+                              <Clock className="h-4 w-4 text-purple-500 mr-2" />
+                              <span className="font-semibold">{appt.time}</span>
                             </div>
-                          )}
-                        </div>
-                        <div className="flex flex-wrap justify-end gap-2 mt-4">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewDetails(appt)}
-                          >
-                            <Eye className="h-4 w-4 mr-1" /> Ver Detalles
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditAppointment(appt)}
-                          >
-                            <Pencil className="h-4 w-4 mr-1" /> Editar
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteClick(appt)}
-                          >
-                            <Trash className="h-4 w-4 mr-1" /> Eliminar
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                            {/* Nombre Completo */}
+                            <div className="flex items-center min-w-0">
+                              <User className="h-4 w-4 text-purple-500 mr-2" />
+                              <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap flex-1 w-0">
+                                {appt.clientName}
+                              </span>
+                            </div>
+                            {/* Email */}
+                            <div className="flex items-center min-w-0">
+                              <Mail className="h-4 w-4 text-purple-500 mr-2" />
+                              <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap flex-1 w-0">
+                                {appt.clientEmail}
+                              </span>
+                            </div>
+                            {/* Teléfono */}
+                            <div className="flex items-center min-w-0">
+                              <Phone className="h-4 w-4 text-purple-500 mr-2" />
+                              <span>{appt.clientPhone}</span>
+                            </div>
+                            {/* Tipo de Consulta */}
+                            <div className="flex items-center col-span-full min-w-0">
+                              <Info className="h-4 w-4 text-purple-500 mr-2" />
+                              <span>
+                                Tipo:{" "}
+                                {appt.consultationType === "ingreso"
+                                  ? "Ingreso"
+                                  : "Seguimiento"}
+                              </span>
+                            </div>
+                            {/* Notas Adicionales */}
+                            {appt.notes && (
+                              <div className="flex items-start gap-2 col-span-full min-w-0">
+                                <ClipboardList className="h-4 w-4 text-purple-500 mt-1" />
+                                <p className="flex-1 w-0 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+                                  Notas: {appt.notes}
+                                </p>
+                              </div>
+                            )}
+                            {/* Estado de la cita */}
+                            <div className="flex items-center col-span-full min-w-0">
+                              {appt.status === "pendiente" && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                  <Clock className="h-3 w-3 mr-1" /> Pendiente
+                                </span>
+                              )}
+                              {appt.status === "confirmada" && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                  <CheckCircle2 className="h-3 w-3 mr-1" />{" "}
+                                  Confirmada
+                                </span>
+                              )}
+                              {appt.status === "cancelada" && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                  <XCircle className="h-3 w-3 mr-1" /> Cancelada
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap justify-end gap-2 mt-4">
+                            {appt.status === "pendiente" && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="bg-green-50 hover:bg-green-100 text-green-700"
+                                  onClick={() =>
+                                    handleStatusChangeClick(appt, "confirm")
+                                  }
+                                  disabled={isConfirming || isCancelling}
+                                >
+                                  <CheckCircle2 className="h-4 w-4 mr-1" />{" "}
+                                  Confirmar
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="bg-red-50 hover:bg-red-100 text-red-700"
+                                  onClick={() =>
+                                    handleStatusChangeClick(appt, "cancel")
+                                  }
+                                  disabled={isConfirming || isCancelling}
+                                >
+                                  <XCircle className="h-4 w-4 mr-1" /> Cancelar
+                                </Button>
+                              </>
+                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewDetails(appt)}
+                            >
+                              <Eye className="h-4 w-4 mr-1" /> Ver Detalles
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditAppointment(appt)}
+                            >
+                              <Pencil className="h-4 w-4 mr-1" /> Editar
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteClick(appt)}
+                            >
+                              <Trash className="h-4 w-4 mr-1" /> Eliminar
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  )}
                 </div>
               )}
             </CardContent>
@@ -298,6 +435,93 @@ export function AppointmentsList({
                   </>
                 ) : (
                   "Sí, eliminar cita"
+                )}
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Diálogo de Confirmación/Cancelación de Estado */}
+      <AlertDialog
+        open={isStatusChangeDialogOpen}
+        onOpenChange={setIsStatusChangeDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {statusChangeType === "confirm"
+                ? "¿Confirmar Cita?"
+                : "¿Cancelar Cita?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Estás a punto de{" "}
+              <span className="font-semibold text-gray-900 dark:text-gray-100">
+                {statusChangeType === "confirm" ? "confirmar" : "cancelar"}
+              </span>{" "}
+              la cita de{" "}
+              <span className="font-semibold text-gray-900 dark:text-gray-100">
+                {appointmentToConfirmOrCancel?.clientName}
+              </span>{" "}
+              para el{" "}
+              <span className="font-semibold text-gray-900 dark:text-gray-100">
+                {appointmentToConfirmOrCancel
+                  ? formatFn(
+                      appointmentToConfirmOrCancel.date,
+                      "dd MMMM yyyy",
+                      {
+                        locale: es,
+                      }
+                    )
+                  : ""}
+              </span>{" "}
+              a las{" "}
+              <span className="font-semibold text-gray-900 dark:text-gray-100">
+                {appointmentToConfirmOrCancel?.time}
+              </span>
+              .
+              <br />
+              Se abrirá una ventana de WhatsApp para enviar la notificación al
+              cliente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={isConfirming || isCancelling}
+              onClick={() => {
+                setAppointmentToConfirmOrCancel(null);
+                setStatusChangeType(null);
+              }}
+            >
+              Volver
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmStatusChange}
+              disabled={isConfirming || isCancelling}
+              asChild
+            >
+              <Button
+                variant={
+                  statusChangeType === "confirm" ? "default" : "destructive"
+                }
+                className={
+                  statusChangeType === "confirm"
+                    ? "bg-green-600 hover:bg-green-700"
+                    : ""
+                }
+              >
+                {isConfirming || isCancelling ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+                    {isConfirming ? "Confirmando..." : "Cancelando..."}
+                  </>
+                ) : (
+                  <>
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    {statusChangeType === "confirm"
+                      ? "Confirmar y Notificar"
+                      : "Cancelar y Notificar"}
+                  </>
                 )}
               </Button>
             </AlertDialogAction>

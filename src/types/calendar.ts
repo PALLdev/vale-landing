@@ -7,7 +7,7 @@ export interface Appointment {
     clientPhone: string
     consultationType: "ingreso" | "seguimiento"
     notes?: string
-    status: "confirmada" | "pendiente"
+    status: "confirmada" | "pendiente" | "cancelada" // Aseguramos que 'cancelada' esté aquí
 }
 
 export interface TimeSlot {

@@ -24,6 +24,7 @@ export async function getAppointments() {
             clientEmail: appt.client_email,
             clientPhone: appt.client_phone,
             consultationType: appt.consultation_type,
+            status: appt.status, // Asegurarse de incluir el estado
         }))
 
         return appointments
@@ -117,14 +118,6 @@ export async function updateAppointment(
         // Validar los datos de entrada con Zod
         const validatedData = appointmentSchema.parse(updatedData)
 
-        // Opcional: Verificar disponibilidad del nuevo horario si el tiempo o la fecha cambian
-        // Para una solución más robusta, se podría re-validar la disponibilidad
-        // en el servidor, pero para este caso, asumimos que la validación
-        // en el cliente (modal) es suficiente para la mayoría de los casos.
-        // Si se requiere una verificación estricta de conflictos, se necesitaría
-        // una lógica más compleja que involucre la obtención de todas las citas
-        // excepto la que se está editando.
-
         const { error } = await supabase
             .from("appointments")
             .update({
@@ -195,6 +188,38 @@ export async function deleteAppointment(id: string) {
         return {
             success: false,
             message: "Ocurrió un error inesperado al eliminar la cita.",
+        }
+    }
+}
+
+// NUEVA FUNCIÓN: Actualizar el estado de una cita
+export async function updateAppointmentStatus(
+    id: string,
+    status: "confirmada" | "pendiente" | "cancelada", // Añadir 'cancelada' como opción
+) {
+    try {
+        const { error } = await supabase
+            .from("appointments")
+            .update({ status: status })
+            .eq("id", id)
+
+        if (error) {
+            console.error("Supabase Error (updateAppointmentStatus):", error)
+            return {
+                success: false,
+                message: error.message || `Failed to update appointment status to ${status}`,
+            }
+        }
+
+        return {
+            success: true,
+            message: `Appointment status updated to ${status} successfully`,
+        }
+    } catch (error) {
+        console.error("Server Action Error (updateAppointmentStatus):", error)
+        return {
+            success: false,
+            message: "Ocurrió un error inesperado al actualizar el estado de la cita.",
         }
     }
 }
