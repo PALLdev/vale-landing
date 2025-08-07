@@ -47,7 +47,7 @@ export function AdminBookingModal({
     handlePrevMonth,
     handleNextMonth,
     handleDateSelect,
-    handleTimeSelect, // Mantener el original para usarlo internamente
+    handleTimeSelect,
     handleBookAppointment,
     setSelectedTime,
     setClientName,
@@ -63,8 +63,9 @@ export function AdminBookingModal({
     es,
     isDayFullyBooked,
     appointments,
-    setSelectedDate, // Importar setSelectedDate del hook
-    maxSelectableDate, // Importar maxSelectableDate
+    setSelectedDate,
+    setCurrentMonth, // <-- Importar setCurrentMonth
+    maxSelectableDate,
   } = useCalendarLogic(true); // Pasar true para la vista de administrador
 
   // Referencia para el panel lateral
@@ -72,10 +73,17 @@ export function AdminBookingModal({
 
   // Efecto para establecer la fecha inicial cuando el modal se abre
   useEffect(() => {
-    if (isOpen && initialDate) {
-      setSelectedDate(initialDate);
-    } else if (!isOpen) {
-      // Resetear la fecha seleccionada cuando el modal se cierra
+    if (isOpen) {
+      if (initialDate) {
+        setSelectedDate(initialDate);
+        setCurrentMonth(initialDate); // Establecer el mes actual del calendario del modal a la fecha inicial
+      } else {
+        // Si el modal se abre sin initialDate, resetear a la fecha/mes actual
+        setSelectedDate(null); // No seleccionar ninguna fecha
+        setCurrentMonth(new Date()); // Mostrar el mes actual
+      }
+    } else {
+      // Resetear la fecha seleccionada y los campos del formulario cuando el modal se cierra
       setSelectedDate(null);
       setSelectedTime(null);
       setClientName("");
@@ -89,6 +97,7 @@ export function AdminBookingModal({
     isOpen,
     initialDate,
     setSelectedDate,
+    setCurrentMonth,
     setSelectedTime,
     setClientName,
     setClientEmail,

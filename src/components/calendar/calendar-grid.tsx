@@ -150,7 +150,7 @@ export function CalendarGrid({
             ) {
               // Incluir isBeyondMaxDate en el estilo de no disponible
               // Apply "not available" style
-              dayButtonClasses += ` cursor-not-allowed opacity-60 bg-gray-100`;
+              dayButtonClasses += ` opacity-60 bg-gray-100`;
               dayNumberClasses += ` text-gray-400`;
             } else {
               // Default available style
