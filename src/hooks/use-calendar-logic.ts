@@ -23,11 +23,14 @@ import { generateTimeSlots, isDayFullyBooked } from "@/lib/calendar-helpers"
 import { addAppointment, getAppointments } from "@/actions/appointments"
 import { appointmentSchema } from "@/schemas/appointment"
 import { ZodError } from "zod"
+import type { AvailabilityBlock } from "@/types/availability"
+import { getAvailabilityBlocks } from "@/actions/availability"
 
 export function useCalendarLogic(isAdminView = false) {
     const [currentMonth, setCurrentMonth] = useState(new Date())
     const [selectedDate, setSelectedDate] = useState<Date | null>(null)
     const [appointments, setAppointments] = useState<Appointment[]>([])
+    const [availabilityBlocks, setAvailabilityBlocks] = useState<AvailabilityBlock[]>([])
     const [selectedTime, setSelectedTime] = useState<string | null>(null)
     const [isLoadingAppointments, setIsLoadingAppointments] = useState(true)
     const [isBooking, setIsBooking] = useState(false)
@@ -43,26 +46,26 @@ export function useCalendarLogic(isAdminView = false) {
     // Calcular la fecha máxima seleccionable: hoy + 6 meses, y tomar el final de ese mes.
     // Ejemplo: Si hoy es 7 de agosto de 2025, 6 meses después es 7 de febrero de 2026.
     // endOfMonth(7 de febrero de 2026) será 28 de febrero de 2026.
-    const maxSelectableDate = useMemo(() => endOfMonth(addMonths(new Date(), 6)), []);
-
+    const maxSelectableDate = useMemo(() => endOfMonth(addMonths(new Date(), 6)), [])
 
     // Cargar citas al montar el componente
     useEffect(() => {
-        const loadAppointments = async () => {
+        const loadData = async () => {
             setIsLoadingAppointments(true)
             try {
-                const fetchedAppointments = await getAppointments()
+                const [fetchedAppointments, fetchedBlocks] = await Promise.all([getAppointments(), getAvailabilityBlocks()])
                 setAppointments(fetchedAppointments as Appointment[])
+                setAvailabilityBlocks(fetchedBlocks)
             } catch (error) {
-                console.error("Error loading appointments:", error)
-                toast.error("Error al cargar citas", {
-                    description: "No se pudieron cargar las citas existentes. Intenta de nuevo más tarde.",
+                console.error("Error loading data:", error)
+                toast.error("Error al cargar datos", {
+                    description: "No se pudieron cargar las citas y bloqueos. Intenta de nuevo más tarde.",
                 })
             } finally {
                 setIsLoadingAppointments(false)
             }
         }
-        loadAppointments()
+        loadData()
     }, [])
 
     const daysInMonth = useMemo(() => {
@@ -90,8 +93,8 @@ export function useCalendarLogic(isAdminView = false) {
         if (isSameMonth(currentMonth, maxSelectableDate)) {
             toast.info("Límite de agendamiento", {
                 description: "Solo puedes agendar citas con hasta 6 meses de anticipación.",
-            });
-            return;
+            })
+            return
         }
         setCurrentMonth((prev) => addMonths(prev, 1))
         setSelectedDate(null)
@@ -120,8 +123,8 @@ export function useCalendarLogic(isAdminView = false) {
             if (isAfter(date, maxSelectableDate)) {
                 toast.error("Fecha fuera de rango", {
                     description: "Solo puedes agendar citas con hasta 6 meses de anticipación.",
-                });
-                return;
+                })
+                return
             }
 
             // Si el día está completamente agendado, se puede seleccionar, pero el panel de horarios mostrará que no hay disponibilidad.
@@ -135,7 +138,10 @@ export function useCalendarLogic(isAdminView = false) {
         setSelectedTime(time)
     }, [])
 
-    const availableTimeSlots = useMemo(() => generateTimeSlots(selectedDate, appointments), [selectedDate, appointments])
+    const availableTimeSlots = useMemo(
+        () => generateTimeSlots(selectedDate, appointments, availabilityBlocks),
+        [selectedDate, appointments, availabilityBlocks],
+    )
 
     // Validación del formulario en el cliente usando Zod
     const validateForm = useCallback(() => {
@@ -188,10 +194,9 @@ export function useCalendarLogic(isAdminView = false) {
             if (isAfter(selectedDate, maxSelectableDate)) {
                 toast.error("Fecha fuera de rango", {
                     description: "Solo puedes agendar citas con hasta 6 meses de anticipación.",
-                });
-                return false;
+                })
+                return false
             }
-
 
             setIsBooking(true) // Iniciar estado de carga del botón
 
@@ -226,8 +231,8 @@ export function useCalendarLogic(isAdminView = false) {
                 })
 
                 // --- NUEVA FUNCIONALIDAD: Notificación al Administrador vía WhatsApp ---
-                const adminWhatsAppNumber = "56958569502";
-                const formattedDate = format(selectedDate, "dd/MM/yyyy", { locale: es });
+                const adminWhatsAppNumber = "56958569502"
+                const formattedDate = format(selectedDate, "dd/MM/yyyy", { locale: es })
                 const message = encodeURIComponent(
                     `¡Nueva cita agendada!\n\n` +
                     `*Cliente:* ${clientName}\n` +
@@ -237,12 +242,12 @@ export function useCalendarLogic(isAdminView = false) {
                     `*Hora:* ${selectedTime}\n` +
                     `*Tipo:* ${consultationType === "ingreso" ? "Ingreso" : "Seguimiento"}\n` +
                     (notes ? `*Notas:* ${notes}\n\n` : "\n") +
-                    `Por favor, revisa y confirma la cita en el panel de administración.`
-                );
-                const whatsappLink = `https://wa.me/${adminWhatsAppNumber}?text=${message}`;
+                    `Por favor, revisa y confirma la cita en el panel de administración.`,
+                )
+                const whatsappLink = `https://wa.me/${adminWhatsAppNumber}?text=${message}`
 
                 // Abrir WhatsApp en una nueva pestaña
-                window.open(whatsappLink, "_blank");
+                window.open(whatsappLink, "_blank")
                 // --- FIN NUEVA FUNCIONALIDAD ---
 
                 // Reset form
@@ -270,13 +275,24 @@ export function useCalendarLogic(isAdminView = false) {
                 return false // Indicar fallo
             }
         },
-        [validateForm, selectedDate, selectedTime, clientName, clientEmail, clientPhone, consultationType, notes, maxSelectableDate],
+        [
+            validateForm,
+            selectedDate,
+            selectedTime,
+            clientName,
+            clientEmail,
+            clientPhone,
+            consultationType,
+            notes,
+            maxSelectableDate,
+        ],
     )
 
     return {
         currentMonth,
         selectedDate,
         appointments,
+        availabilityBlocks,
         selectedTime,
         clientName,
         clientEmail,
@@ -309,9 +325,11 @@ export function useCalendarLogic(isAdminView = false) {
         isSameDay,
         format,
         es,
-        isDayFullyBooked,
+        isDayFullyBooked: (date: Date, allAppointments: Appointment[]) =>
+            isDayFullyBooked(date, allAppointments, availabilityBlocks),
         setAppointments,
         setIsLoadingAppointments,
         maxSelectableDate, // Exportar maxSelectableDate
+        setAvailabilityBlocks,
     }
 }

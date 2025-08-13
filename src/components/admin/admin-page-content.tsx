@@ -3,10 +3,11 @@ import { useRef, useCallback, useState } from "react";
 import { useCalendarLogic } from "@/hooks/use-calendar-logic";
 import { CalendarGrid } from "@/components/calendar/calendar-grid";
 import { AppointmentsList } from "@/components/admin/appointments-list";
-import { Loader2, PlusCircle } from "lucide-react"; // Eliminar ClipboardList de aquí
+import { Loader2, PlusCircle } from "lucide-react";
 import { getAppointments } from "@/actions/appointments";
 import { Button } from "@/components/ui/button";
 import { AdminBookingModal } from "@/components/admin/admin-booking-modal";
+import { AvailabilityManager } from "@/components/admin/availability-manager";
 
 export function AdminCalendarPageContent() {
   const {
@@ -28,8 +29,9 @@ export function AdminCalendarPageContent() {
     isDayFullyBooked,
     setAppointments,
     setIsLoadingAppointments,
-    maxSelectableDate, // Importar maxSelectableDate
-  } = useCalendarLogic(true); // Pasar true para la vista de administrador
+    maxSelectableDate,
+    availabilityBlocks,
+  } = useCalendarLogic(true);
 
   const appointmentsListRef = useRef<HTMLDivElement>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -55,7 +57,6 @@ export function AdminCalendarPageContent() {
       setAppointments(fetchedAppointments);
     } catch (error) {
       console.error("Error refetching appointments:", error);
-      // Opcional: mostrar un toast de error
     } finally {
       setIsLoadingAppointments(false);
     }
@@ -105,7 +106,8 @@ export function AdminCalendarPageContent() {
           isDayFullyBooked={isDayFullyBooked}
           appointments={appointments}
           showAppointmentIndicator={true}
-          maxSelectableDate={maxSelectableDate} // Pasar maxSelectableDate
+          maxSelectableDate={maxSelectableDate}
+          availabilityBlocks={availabilityBlocks}
         />
 
         <div className="space-y-8 scroll-mt-20" ref={appointmentsListRef}>
@@ -118,6 +120,13 @@ export function AdminCalendarPageContent() {
             onBookNewAppointment={handleOpenBookingModal}
           />
         </div>
+      </div>
+
+      <div className="mt-8">
+        <AvailabilityManager
+          onAvailabilityChange={refetchAppointments}
+          showOnlyRecent={true}
+        />
       </div>
 
       <AdminBookingModal

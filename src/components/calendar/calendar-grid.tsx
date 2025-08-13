@@ -6,6 +6,8 @@ import type { Locale } from "date-fns";
 import { isSameMonth, format, isAfter, startOfMonth } from "date-fns"; // Importar isAfter
 import type { Appointment } from "@/types/calendar";
 import { hasAppointmentsOnDay } from "@/lib/calendar-helpers";
+import type { AvailabilityBlock } from "@/types/availability";
+import { isDayBlocked } from "@/lib/calendar-helpers";
 
 interface CalendarGridProps {
   currentMonth: Date;
@@ -29,6 +31,7 @@ interface CalendarGridProps {
   appointments: Appointment[];
   showAppointmentIndicator: boolean;
   maxSelectableDate: Date;
+  availabilityBlocks: AvailabilityBlock[];
 }
 
 export function CalendarGrid({
@@ -49,6 +52,7 @@ export function CalendarGrid({
   appointments,
   showAppointmentIndicator,
   maxSelectableDate,
+  availabilityBlocks,
 }: CalendarGridProps) {
   const today = new Date();
 
@@ -123,16 +127,22 @@ export function CalendarGrid({
             const isSelected = selectedDate && isSameDay(day, selectedDate);
             const isCurrentDay = isToday(day);
             const isBeyondMaxDate = isAfter(day, safeMaxSelectableDate); // Nuevo: si el día está más allá del límite
+            const isDayBlockedByAdmin = isDayBlocked(day, availabilityBlocks);
 
             // Determine if the button should be disabled based on context
             let isDisabledForClick = false;
             if (showAppointmentIndicator) {
-              // Admin view: Sundays and beyond max date are truly unclickable for new bookings
-              isDisabledForClick = isSunday || isBeyondMaxDate;
-            } else {
-              // Public booking view: past days, Sundays, fully booked days, and beyond max date are unclickable
+              // Admin view: Sundays, beyond max date, and blocked days are truly unclickable for new bookings
               isDisabledForClick =
-                isPastDay || isSunday || isFullyBookedDay || isBeyondMaxDate;
+                isSunday || isBeyondMaxDate || isDayBlockedByAdmin;
+            } else {
+              // Public booking view: past days, Sundays, fully booked days, beyond max date, and blocked days are unclickable
+              isDisabledForClick =
+                isPastDay ||
+                isSunday ||
+                isFullyBookedDay ||
+                isBeyondMaxDate ||
+                isDayBlockedByAdmin;
             }
 
             let dayButtonClasses = `h-12 w-full flex flex-col items-center justify-center relative rounded-lg transition-all duration-200`;
@@ -146,7 +156,8 @@ export function CalendarGrid({
               isPastDay ||
               isSunday ||
               isFullyBookedDay ||
-              isBeyondMaxDate
+              isBeyondMaxDate ||
+              isDayBlockedByAdmin
             ) {
               // Incluir isBeyondMaxDate en el estilo de no disponible
               // Apply "not available" style
@@ -184,7 +195,8 @@ export function CalendarGrid({
                     isPastDay ||
                     isSunday ||
                     isFullyBookedDay ||
-                    isBeyondMaxDate
+                    isBeyondMaxDate ||
+                    isDayBlockedByAdmin
                   ) && ( // Solo mostrar indicador si es seleccionable
                     <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-purple-500 rounded-full" />
                   )}

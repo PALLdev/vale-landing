@@ -43,6 +43,7 @@ export function CalendarSystem() {
     isDayFullyBooked,
     appointments,
     maxSelectableDate, // Importar maxSelectableDate
+    availabilityBlocks, // Destructurar availabilityBlocks
   } = useCalendarLogic(false); // Pasar false para la vista pública
 
   // Referencia para el panel lateral
@@ -92,6 +93,7 @@ export function CalendarSystem() {
         appointments={appointments}
         showAppointmentIndicator={false}
         maxSelectableDate={maxSelectableDate} // Pasar maxSelectableDate
+        availabilityBlocks={availabilityBlocks} // Pasar availabilityBlocks
       />
 
       {/* Columna del Panel Lateral (Horarios O Formulario) */}
