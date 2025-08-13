@@ -17,8 +17,9 @@ const availabilityBlockSchema = z.object({
 
 // Función helper para crear Date desde string YYYY-MM-DD sin problemas de timezone
 function createDateFromString(dateString: string): Date {
-    const [year, month, day] = dateString.split("-").map(Number)
-    return new Date(year, month - 1, day) // month - 1 porque los meses van de 0-11
+    // Usar Date constructor con string ISO para evitar problemas de timezone
+    // Agregar 'T12:00:00' para que sea mediodía UTC y evitar cambios de día
+    return new Date(`${dateString}T12:00:00.000Z`)
 }
 
 // Función para obtener todos los bloqueos de disponibilidad
@@ -32,10 +33,23 @@ export async function getAvailabilityBlocks() {
             throw new Error("Failed to fetch availability blocks.")
         }
 
+        console.log("=== LEYENDO BLOQUEOS DE LA DB ===")
+        console.log("Datos raw de Supabase:", data.slice(0, 2)) // Solo los primeros 2 para no saturar
+
         const blocks: AvailabilityBlock[] = data.map((block) => {
+            console.log(`Procesando bloqueo ${block.id}:`)
+            console.log(`  - date raw de DB: "${block.date}" (tipo: ${typeof block.date})`)
+
+            const dateFromHelper = createDateFromString(block.date)
+            console.log(`  - Date creado con helper: ${dateFromHelper}`)
+            console.log(`  - Fecha local: ${dateFromHelper.toLocaleDateString()}`)
+            console.log(`  - getFullYear(): ${dateFromHelper.getFullYear()}`)
+            console.log(`  - getMonth(): ${dateFromHelper.getMonth()}`)
+            console.log(`  - getDate(): ${dateFromHelper.getDate()}`)
+
             return {
                 id: block.id,
-                date: createDateFromString(block.date), // Usar la función helper
+                date: dateFromHelper,
                 timeSlot: block.time_slot || undefined,
                 blockType: block.block_type,
                 reason: block.reason || undefined,
@@ -43,6 +57,20 @@ export async function getAvailabilityBlocks() {
                 updatedAt: new Date(block.updated_at),
             }
         })
+
+        console.log("=== BLOQUEOS PROCESADOS ===")
+        console.log(
+            "Primeros 2 bloqueos procesados:",
+            blocks.slice(0, 2).map((b) => ({
+                id: b.id,
+                date: b.date,
+                dateString: b.date.toISOString().split("T")[0],
+                localDate: b.date.toLocaleDateString(),
+                day: b.date.getDate(),
+                month: b.date.getMonth() + 1,
+                year: b.date.getFullYear(),
+            })),
+        )
 
         return blocks
     } catch (error) {
@@ -60,6 +88,7 @@ export async function createAvailabilityBlock(blockData: CreateAvailabilityBlock
         console.log("dateString recibido:", validatedData.dateString)
         console.log("timeSlot:", validatedData.timeSlot)
         console.log("blockType:", validatedData.blockType)
+        console.log("Zona horaria del servidor:", Intl.DateTimeFormat().resolvedOptions().timeZone)
 
         const { data, error } = await supabase
             .from("availability_blocks")
@@ -71,7 +100,7 @@ export async function createAvailabilityBlock(blockData: CreateAvailabilityBlock
                     reason: validatedData.reason || null,
                 },
             ])
-            .select("id")
+            .select("*") // Seleccionar todo para ver qué se guardó realmente
             .single()
 
         if (error) {
@@ -89,7 +118,8 @@ export async function createAvailabilityBlock(blockData: CreateAvailabilityBlock
         }
 
         console.log("✅ Bloqueo creado exitosamente")
-        console.log("ID generado:", data.id)
+        console.log("Datos guardados en DB:", data)
+        console.log("Fecha guardada en DB:", data.date, "(tipo:", typeof data.date, ")")
 
         return {
             success: true,
