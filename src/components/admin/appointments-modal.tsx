@@ -48,6 +48,8 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import type { AvailabilityBlock } from "@/types/availability";
+import { getAvailabilityBlocks } from "@/actions/availability";
 
 interface AppointmentModalProps {
   isOpen: boolean;
@@ -81,6 +83,9 @@ export function AppointmentModal({
   const [isSaving, setIsSaving] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [isTimeSelectOpen, setIsTimeSelectOpen] = useState(false);
+  const [availabilityBlocks, setAvailabilityBlocks] = useState<
+    AvailabilityBlock[]
+  >([]);
 
   const timeSelectTriggerRef = useRef<HTMLButtonElement>(null);
 
@@ -98,12 +103,31 @@ export function AppointmentModal({
       setSelectedDate(appointment.date);
       setFormErrors({});
     }
+
+    // Cargar availability blocks
+    const loadAvailabilityBlocks = async () => {
+      try {
+        const blocks = await getAvailabilityBlocks();
+        setAvailabilityBlocks(blocks);
+      } catch (error) {
+        console.error("Error loading availability blocks:", error);
+      }
+    };
+
+    if (appointment) {
+      loadAvailabilityBlocks();
+    }
   }, [appointment]);
 
   const availableTimeSlots = useMemo(() => {
     if (!appointment || !selectedDate) return [];
-    return generateTimeSlots(selectedDate, allAppointments, appointment.id);
-  }, [appointment, allAppointments, selectedDate]);
+    return generateTimeSlots(
+      selectedDate,
+      allAppointments,
+      availabilityBlocks,
+      appointment.id
+    );
+  }, [appointment, allAppointments, selectedDate, availabilityBlocks]);
 
   const getFirstError = (field: keyof typeof formErrors) => {
     const errors = formErrors[field];
