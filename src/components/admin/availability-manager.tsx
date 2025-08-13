@@ -286,11 +286,16 @@ export function AvailabilityManager({
       const blocksToCreate: CreateAvailabilityBlockInput[] = [];
 
       for (const date of datesToBlock) {
-        // CORREGIDO: Convertir la fecha a string YYYY-MM-DD en el cliente
+        // Convertir la fecha a string YYYY-MM-DD en el cliente
         const dateString = dateToString(date);
 
-        console.log("Cliente - Fecha original:", date);
-        console.log("Cliente - String generado:", dateString);
+        console.log("=== CLIENTE - Preparando bloqueo ===");
+        console.log("Fecha original seleccionada:", date);
+        console.log("String generado para enviar:", dateString);
+        console.log(
+          "Zona horaria del navegador:",
+          Intl.DateTimeFormat().resolvedOptions().timeZone
+        );
 
         if (isFullDay) {
           // Crear un bloqueo para todo el día
@@ -313,6 +318,10 @@ export function AvailabilityManager({
         }
       }
 
+      console.log("=== ENVIANDO AL SERVIDOR ===");
+      console.log("Total de bloqueos a crear:", blocksToCreate.length);
+      console.log("Primer bloqueo:", blocksToCreate[0]);
+
       // Crear todos los bloqueos
       const results = await Promise.all(
         blocksToCreate.map((blockData) => createAvailabilityBlock(blockData))
@@ -321,6 +330,7 @@ export function AvailabilityManager({
       // Verificar si algún bloqueo falló
       const failedResults = results.filter((result) => !result.success);
       if (failedResults.length > 0) {
+        console.error("Algunos bloqueos fallaron:", failedResults);
         throw new Error(
           `Algunos bloqueos fallaron: ${failedResults
             .map((r) => r.message)
@@ -330,6 +340,8 @@ export function AvailabilityManager({
 
       const totalBlocksCreated = results.length;
       const daysBlocked = datesToBlock.length;
+
+      console.log("✅ TODOS LOS BLOQUEOS CREADOS EXITOSAMENTE");
 
       toast.success("Bloqueo(s) creado(s)", {
         description:
@@ -347,6 +359,7 @@ export function AvailabilityManager({
       setIsDialogOpen(false);
       resetForm();
     } catch (error) {
+      console.error("❌ ERROR AL CREAR BLOQUEOS:", error);
       toast.error("Error al crear bloqueo(s)", {
         description:
           error instanceof Error ? error.message : "Error desconocido",
