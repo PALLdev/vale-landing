@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -55,6 +55,9 @@ import {
   addMonths,
   eachDayOfInterval,
   isBefore,
+  isPast,
+  isToday,
+  endOfMonth,
 } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
@@ -114,7 +117,12 @@ export function AvailabilityManager({
   const [startDatePopoverOpen, setStartDatePopoverOpen] = useState(false);
   const [endDatePopoverOpen, setEndDatePopoverOpen] = useState(false);
 
-  const maxBookingDate = addMonths(new Date(), 6);
+  // Calcular correctamente la fecha máxima: final del 6º mes desde hoy
+  const maxBookingDate = useMemo(() => {
+    const today = new Date();
+    const sixMonthsFromNow = addMonths(today, 6);
+    return endOfMonth(sixMonthsFromNow);
+  }, []);
 
   // Time slots for selection
   const timeSlots = [
@@ -445,6 +453,12 @@ export function AvailabilityManager({
     }
   };
 
+  // Función para determinar si una fecha debe estar deshabilitada
+  const isDateDisabled = (date: Date) => {
+    // Solo deshabilitar fechas pasadas (excepto hoy) y fechas después del límite de 6 meses
+    return (isPast(date) && !isToday(date)) || isAfter(date, maxBookingDate);
+  };
+
   // Componente para renderizar la lista de bloqueos
   const BlocksList = ({
     blocks,
@@ -680,7 +694,7 @@ export function AvailabilityManager({
                       }}
                       initialFocus
                       locale={es}
-                      disabled={(date) => isAfter(date, maxBookingDate)}
+                      disabled={isDateDisabled}
                     />
                   </PopoverContent>
                 </Popover>
@@ -731,7 +745,7 @@ export function AvailabilityManager({
                         }}
                         initialFocus
                         locale={es}
-                        disabled={(date) => isAfter(date, maxBookingDate)}
+                        disabled={isDateDisabled}
                       />
                     </PopoverContent>
                   </Popover>
@@ -779,7 +793,7 @@ export function AvailabilityManager({
                         initialFocus
                         locale={es}
                         disabled={(date) =>
-                          isAfter(date, maxBookingDate) ||
+                          isDateDisabled(date) ||
                           (startDate ? isBefore(date, startDate) : false)
                         }
                       />
@@ -1087,12 +1101,7 @@ export function AvailabilityManager({
                 ) : (
                   <>
                     <Trash2 className="h-4 w-4" />
-                    <span className="sm:hidden">
-                      Eliminar ({selectedBlocks.size})
-                    </span>
-                    <span className="hidden sm:inline">
-                      Eliminar seleccionados ({selectedBlocks.size})
-                    </span>
+                    Eliminar seleccionados ({selectedBlocks.size})
                   </>
                 )}
               </Button>

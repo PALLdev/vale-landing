@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react";
 import type { Locale } from "date-fns";
-import { isSameMonth, format, isAfter, startOfMonth } from "date-fns"; // Importar isAfter
+import { isSameMonth, format, isAfter, startOfMonth } from "date-fns"; // Añadir isPast e isToday
 import type { Appointment } from "@/types/calendar";
 import { hasAppointmentsOnDay } from "@/lib/calendar-helpers";
 import type { AvailabilityBlock } from "@/types/availability";
@@ -32,6 +32,7 @@ interface CalendarGridProps {
   showAppointmentIndicator: boolean;
   maxSelectableDate: Date;
   availabilityBlocks: AvailabilityBlock[];
+  isAdminView?: boolean; // Nuevo prop para identificar si es vista de admin
 }
 
 export function CalendarGrid({
@@ -53,6 +54,7 @@ export function CalendarGrid({
   showAppointmentIndicator,
   maxSelectableDate,
   availabilityBlocks,
+  isAdminView = false, // Valor por defecto
 }: CalendarGridProps) {
   const today = new Date();
 
@@ -79,7 +81,7 @@ export function CalendarGrid({
       <CardHeader className="pb-4">
         <CardTitle className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
           <CalendarIcon className="h-6 w-6 text-purple-600" />
-          Selecciona tu Fecha
+          {isAdminView ? "Calendario de Administración" : "Selecciona tu Fecha"}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -126,17 +128,23 @@ export function CalendarGrid({
             const hasAppts = hasAppointmentsOnDay(day, appointments);
             const isSelected = selectedDate && isSameDay(day, selectedDate);
             const isCurrentDay = isToday(day);
-            const isBeyondMaxDate = isAfter(day, safeMaxSelectableDate); // Nuevo: si el día está más allá del límite
+            const isBeyondMaxDate = isAfter(day, safeMaxSelectableDate);
             const isDayBlockedByAdmin = isDayBlocked(day, availabilityBlocks);
 
             // Determine if the button should be disabled based on context
             let isDisabledForClick = false;
-            if (showAppointmentIndicator) {
-              // Admin view: Sundays, beyond max date, and blocked days are truly unclickable for new bookings
-              isDisabledForClick =
-                isSunday || isBeyondMaxDate || isDayBlockedByAdmin;
+            if (isAdminView) {
+              // Vista de admin:
+              // - Días futuros: Domingos, más allá del límite, y bloqueados son no clicables
+              // - Días pasados: Solo clicables si tienen citas
+              if (isPastDay) {
+                isDisabledForClick = !hasAppts; // Solo clicable si tiene citas
+              } else {
+                isDisabledForClick =
+                  isSunday || isBeyondMaxDate || isDayBlockedByAdmin;
+              }
             } else {
-              // Public booking view: past days, Sundays, fully booked days, beyond max date, and blocked days are unclickable
+              // Vista pública: días pasados, domingos, completamente reservados, más allá del límite, y bloqueados son no clicables
               isDisabledForClick =
                 isPastDay ||
                 isSunday ||
@@ -152,15 +160,12 @@ export function CalendarGrid({
             if (isSelected) {
               dayButtonClasses += ` bg-purple-600 hover:bg-purple-700 shadow-md`;
               dayNumberClasses += ` text-white`;
-            } else if (
-              isPastDay ||
-              isSunday ||
-              isFullyBookedDay ||
-              isBeyondMaxDate ||
-              isDayBlockedByAdmin
-            ) {
-              // Incluir isBeyondMaxDate en el estilo de no disponible
-              // Apply "not available" style
+            } else if (isPastDay) {
+              // TODOS los días pasados se ven iguales (como el día 5 en la imagen)
+              dayButtonClasses += ` opacity-60 bg-gray-100`;
+              dayNumberClasses += ` text-gray-400`;
+            } else if (isDisabledForClick) {
+              // Apply "not available" style for non-past days
               dayButtonClasses += ` opacity-60 bg-gray-100`;
               dayNumberClasses += ` text-gray-400`;
             } else {
@@ -172,10 +177,8 @@ export function CalendarGrid({
             // Always apply current day border if it's the current day and not selected
             if (isCurrentDay && !isSelected) {
               dayButtonClasses += ` border-2 border-purple-400`;
-              // If it's the current day and not selected, and not disabled by past/sunday/fully booked/beyond max date, text is purple
-              if (
-                !(isPastDay || isSunday || isFullyBookedDay || isBeyondMaxDate)
-              ) {
+              // If it's the current day and not selected, and not disabled, text is purple
+              if (!isDisabledForClick) {
                 dayNumberClasses = ` text-purple-700 font-semibold`;
               }
             }
@@ -186,18 +189,20 @@ export function CalendarGrid({
                 variant="ghost"
                 className={dayButtonClasses}
                 onClick={() => handleDateSelect(day)}
-                disabled={isDisabledForClick} // Use the new conditional disable
+                disabled={isDisabledForClick}
               >
                 <span className={dayNumberClasses}>{formatFn(day, "d")}</span>
-                {showAppointmentIndicator &&
+
+                {/* Indicadores para vista de admin - mismo tamaño para todos */}
+                {isAdminView && hasAppts && (
+                  <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-purple-500 rounded-full" />
+                )}
+
+                {/* Indicador para vista pública (solo días futuros disponibles con citas) */}
+                {!isAdminView &&
+                  showAppointmentIndicator &&
                   hasAppts &&
-                  !(
-                    isPastDay ||
-                    isSunday ||
-                    isFullyBookedDay ||
-                    isBeyondMaxDate ||
-                    isDayBlockedByAdmin
-                  ) && ( // Solo mostrar indicador si es seleccionable
+                  !isDisabledForClick && (
                     <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-purple-500 rounded-full" />
                   )}
               </Button>
@@ -210,24 +215,49 @@ export function CalendarGrid({
 
         {/* Leyenda del Calendario */}
         <div className="mt-8 pt-4 border-t border-gray-100 text-xs sm:text-sm text-gray-600 flex flex-wrap justify-center gap-x-0.5 sm:gap-x-6 gap-y-2">
-          {showAppointmentIndicator && (
-            <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>
-              <span>Día con citas (disponible)</span>
-            </div>
+          {isAdminView ? (
+            // Leyenda para vista de admin
+            <>
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>
+                <span>Día con citas</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-4 h-4 border-2 border-purple-400 rounded-lg"></span>
+                <span>Día actual</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-4 h-4 bg-purple-600 rounded-lg"></span>
+                <span>Día seleccionado</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-4 h-4 bg-gray-100 rounded-lg opacity-60"></span>
+                <span>Día no disponible/sin citas</span>
+              </div>
+            </>
+          ) : (
+            // Leyenda para vista pública
+            <>
+              {showAppointmentIndicator && (
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>
+                  <span>Día con citas (disponible)</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <span className="w-4 h-4 border-2 border-purple-400 rounded-lg"></span>
+                <span>Día actual</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-4 h-4 bg-purple-600 rounded-lg"></span>
+                <span>Día seleccionado</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-4 h-4 bg-gray-100 rounded-lg opacity-60"></span>
+                <span>Día no disponible/sin horarios</span>
+              </div>
+            </>
           )}
-          <div className="flex items-center gap-2">
-            <span className="w-4 h-4 border-2 border-purple-400 rounded-lg"></span>
-            <span>Día actual</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-4 h-4 bg-purple-600 rounded-lg"></span>
-            <span>Día seleccionado</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-4 h-4 bg-gray-100 rounded-lg opacity-60"></span>
-            <span>Día no disponible/sin horarios</span>
-          </div>
         </div>
       </CardContent>
     </Card>

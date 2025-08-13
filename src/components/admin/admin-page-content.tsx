@@ -32,7 +32,7 @@ export function AdminCalendarPageContent() {
     setIsLoadingAppointments,
     maxSelectableDate,
     availabilityBlocks,
-    setAvailabilityBlocks, // Añadir esta función del hook
+    setAvailabilityBlocks,
   } = useCalendarLogic(true);
 
   const appointmentsListRef = useRef<HTMLDivElement>(null);
@@ -115,6 +115,7 @@ export function AdminCalendarPageContent() {
           showAppointmentIndicator={true}
           maxSelectableDate={maxSelectableDate}
           availabilityBlocks={availabilityBlocks}
+          isAdminView={true} // Pasar isAdminView como true
         />
 
         <div className="space-y-8 scroll-mt-20" ref={appointmentsListRef}>

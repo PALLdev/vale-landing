@@ -64,9 +64,9 @@ export function AdminBookingModal({
     isDayFullyBooked,
     appointments,
     setSelectedDate,
-    setCurrentMonth, // <-- Importar setCurrentMonth
+    setCurrentMonth,
     maxSelectableDate,
-    availabilityBlocks, // <-- Destructurar availabilityBlocks
+    availabilityBlocks,
   } = useCalendarLogic(true); // Pasar true para la vista de administrador
 
   // Referencia para el panel lateral
@@ -182,8 +182,9 @@ export function AdminBookingModal({
               isDayFullyBooked={isDayFullyBooked}
               appointments={appointments}
               showAppointmentIndicator={true}
-              maxSelectableDate={maxSelectableDate} // Pasar maxSelectableDate
-              availabilityBlocks={availabilityBlocks} // <-- Pasar availabilityBlocks
+              maxSelectableDate={maxSelectableDate}
+              availabilityBlocks={availabilityBlocks}
+              isAdminView={true} // Pasar isAdminView como true para el modal también
             />
 
             {/* Columna del Panel Lateral (Horarios O Formulario) */}
