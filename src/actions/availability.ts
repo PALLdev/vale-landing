@@ -6,7 +6,7 @@ import type { AvailabilityBlock, CreateAvailabilityBlockInput } from "@/types/av
 import { z } from "zod"
 
 const availabilityBlockSchema = z.object({
-    date: z.date(),
+    dateString: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Formato de fecha inválido (YYYY-MM-DD)"),
     timeSlot: z
         .string()
         .regex(/^\d{2}:\d{2}$/)
@@ -56,22 +56,13 @@ export async function createAvailabilityBlock(blockData: CreateAvailabilityBlock
     try {
         const validatedData = availabilityBlockSchema.parse(blockData)
 
-        // CORREGIDO: Crear la fecha en formato YYYY-MM-DD usando la zona horaria local
-        // Esto evita problemas de conversión UTC que causan el desfase de días
-        const year = validatedData.date.getFullYear()
-        const month = String(validatedData.date.getMonth() + 1).padStart(2, "0")
-        const day = String(validatedData.date.getDate()).padStart(2, "0")
-        const dateString = `${year}-${month}-${day}`
-
-        console.log("Creando bloqueo para fecha:", dateString)
-        console.log("Fecha original recibida:", validatedData.date)
-        console.log("Año:", year, "Mes:", month, "Día:", day)
+        console.log("Recibido en servidor - dateString:", validatedData.dateString)
 
         const { data, error } = await supabase
             .from("availability_blocks")
             .insert([
                 {
-                    date: dateString, // Usar el string de fecha en formato YYYY-MM-DD
+                    date: validatedData.dateString, // Usar directamente el string recibido
                     time_slot: validatedData.timeSlot || null,
                     block_type: validatedData.blockType,
                     reason: validatedData.reason || null,
@@ -87,6 +78,8 @@ export async function createAvailabilityBlock(blockData: CreateAvailabilityBlock
                 message: error.message || "Failed to create availability block",
             }
         }
+
+        console.log("Bloqueo creado exitosamente con fecha:", validatedData.dateString)
 
         return {
             success: true,
@@ -138,7 +131,7 @@ export async function deleteAvailabilityBlock(id: string) {
 // Función para verificar si una fecha/hora específica está bloqueada
 export async function isTimeSlotBlocked(date: Date, timeSlot?: string): Promise<boolean> {
     try {
-        // CORREGIDO: Crear la fecha en la zona horaria local para evitar problemas de offset
+        // Crear la fecha en la zona horaria local para evitar problemas de offset
         const year = date.getFullYear()
         const month = String(date.getMonth() + 1).padStart(2, "0")
         const day = String(date.getDate()).padStart(2, "0")

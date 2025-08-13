@@ -9,7 +9,7 @@ export interface AvailabilityBlock {
 }
 
 export interface CreateAvailabilityBlockInput {
-    date: Date
+    dateString: string // CAMBIO: Enviar como string YYYY-MM-DD
     timeSlot?: string
     blockType: "unavailable" | "vacation" | "maintenance"
     reason?: string
