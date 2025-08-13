@@ -330,6 +330,6 @@ export function useCalendarLogic(isAdminView = false) {
         setAppointments,
         setIsLoadingAppointments,
         maxSelectableDate, // Exportar maxSelectableDate
-        setAvailabilityBlocks,
+        setAvailabilityBlocks, // Exportar setAvailabilityBlocks para poder actualizar los bloqueos
     }
 }

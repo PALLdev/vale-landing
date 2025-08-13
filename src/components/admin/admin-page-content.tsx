@@ -5,6 +5,7 @@ import { CalendarGrid } from "@/components/calendar/calendar-grid";
 import { AppointmentsList } from "@/components/admin/appointments-list";
 import { Loader2, PlusCircle } from "lucide-react";
 import { getAppointments } from "@/actions/appointments";
+import { getAvailabilityBlocks } from "@/actions/availability";
 import { Button } from "@/components/ui/button";
 import { AdminBookingModal } from "@/components/admin/admin-booking-modal";
 import { AvailabilityManager } from "@/components/admin/availability-manager";
@@ -31,6 +32,7 @@ export function AdminCalendarPageContent() {
     setIsLoadingAppointments,
     maxSelectableDate,
     availabilityBlocks,
+    setAvailabilityBlocks, // Añadir esta función del hook
   } = useCalendarLogic(true);
 
   const appointmentsListRef = useRef<HTMLDivElement>(null);
@@ -49,18 +51,23 @@ export function AdminCalendarPageContent() {
     }
   };
 
-  // Función para recargar las citas
+  // Función para recargar las citas Y los bloqueos de disponibilidad
   const refetchAppointments = useCallback(async () => {
     setIsLoadingAppointments(true);
     try {
-      const fetchedAppointments = await getAppointments();
+      // Cargar tanto las citas como los bloqueos de disponibilidad
+      const [fetchedAppointments, fetchedBlocks] = await Promise.all([
+        getAppointments(),
+        getAvailabilityBlocks(),
+      ]);
       setAppointments(fetchedAppointments);
+      setAvailabilityBlocks(fetchedBlocks); // Actualizar también los bloqueos
     } catch (error) {
-      console.error("Error refetching appointments:", error);
+      console.error("Error refetching data:", error);
     } finally {
       setIsLoadingAppointments(false);
     }
-  }, [setAppointments, setIsLoadingAppointments]);
+  }, [setAppointments, setIsLoadingAppointments, setAvailabilityBlocks]);
 
   // Función para abrir el modal de agendamiento con una fecha inicial
   const handleOpenBookingModal = useCallback((date?: Date) => {
