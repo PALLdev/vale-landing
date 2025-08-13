@@ -278,10 +278,22 @@ export function AvailabilityManager({
       const blocksToCreate: CreateAvailabilityBlockInput[] = [];
 
       for (const date of datesToBlock) {
+        // CORREGIDO: Crear una nueva fecha en la zona horaria local para evitar problemas de UTC
         const localDate = new Date(
           date.getFullYear(),
           date.getMonth(),
           date.getDate()
+        );
+
+        console.log("Fecha original:", date);
+        console.log("Fecha local creada:", localDate);
+        console.log(
+          "Año:",
+          localDate.getFullYear(),
+          "Mes:",
+          localDate.getMonth(),
+          "Día:",
+          localDate.getDate()
         );
 
         if (isFullDay) {

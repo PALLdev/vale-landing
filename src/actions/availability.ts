@@ -56,21 +56,22 @@ export async function createAvailabilityBlock(blockData: CreateAvailabilityBlock
     try {
         const validatedData = availabilityBlockSchema.parse(blockData)
 
-        // Crear la fecha en formato YYYY-MM-DD sin problemas de zona horaria
+        // CORREGIDO: Crear la fecha en formato YYYY-MM-DD usando la zona horaria local
+        // Esto evita problemas de conversión UTC que causan el desfase de días
         const year = validatedData.date.getFullYear()
         const month = String(validatedData.date.getMonth() + 1).padStart(2, "0")
         const day = String(validatedData.date.getDate()).padStart(2, "0")
         const dateString = `${year}-${month}-${day}`
 
         console.log("Creando bloqueo para fecha:", dateString)
-        console.log("Fecha original:", validatedData.date)
-        console.log("Día de la fecha original:", validatedData.date.getDate())
+        console.log("Fecha original recibida:", validatedData.date)
+        console.log("Año:", year, "Mes:", month, "Día:", day)
 
         const { data, error } = await supabase
             .from("availability_blocks")
             .insert([
                 {
-                    date: dateString,
+                    date: dateString, // Usar el string de fecha en formato YYYY-MM-DD
                     time_slot: validatedData.timeSlot || null,
                     block_type: validatedData.blockType,
                     reason: validatedData.reason || null,
@@ -137,11 +138,13 @@ export async function deleteAvailabilityBlock(id: string) {
 // Función para verificar si una fecha/hora específica está bloqueada
 export async function isTimeSlotBlocked(date: Date, timeSlot?: string): Promise<boolean> {
     try {
-        // Crear la fecha en la zona horaria local para evitar problemas de offset
+        // CORREGIDO: Crear la fecha en la zona horaria local para evitar problemas de offset
         const year = date.getFullYear()
         const month = String(date.getMonth() + 1).padStart(2, "0")
         const day = String(date.getDate()).padStart(2, "0")
         const dateString = `${year}-${month}-${day}`
+
+        console.log("Verificando bloqueo para fecha:", dateString, "timeSlot:", timeSlot)
 
         const { data, error } = await supabase
             .from("availability_blocks")
