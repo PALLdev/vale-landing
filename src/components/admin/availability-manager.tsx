@@ -460,7 +460,7 @@ export function AvailabilityManager({
         <div
           key={block.id}
           className={cn(
-            "flex items-center gap-3 p-4 border rounded-lg transition-colors",
+            "flex flex-col sm:flex-row sm:items-center gap-3 p-3 sm:p-4 border rounded-lg transition-colors",
             showSelection && selectedBlocks.has(block.id)
               ? "bg-purple-50 border-purple-200"
               : "bg-gray-50"
@@ -470,24 +470,24 @@ export function AvailabilityManager({
             <Checkbox
               checked={selectedBlocks.has(block.id)}
               onCheckedChange={() => toggleBlockSelection(block.id)}
-              className="flex-shrink-0"
+              className="flex-shrink-0 self-start sm:self-center"
             />
           )}
 
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="font-medium">
-                {format(block.date, "dd MMMM yyyy", { locale: es })}
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
+              <span className="font-medium text-sm sm:text-base">
+                {format(block.date, "dd MMM yyyy", { locale: es })}
               </span>
               {block.timeSlot && (
-                <div className="flex items-center gap-1 text-sm text-gray-600">
+                <div className="flex items-center gap-1 text-xs sm:text-sm text-gray-600">
                   <Clock className="h-3 w-3" />
                   {block.timeSlot}
                 </div>
               )}
               <span
                 className={cn(
-                  "px-2 py-1 rounded-full text-xs font-medium",
+                  "px-2 py-1 rounded-full text-xs font-medium w-fit",
                   getBlockTypeColor(block.blockType)
                 )}
               >
@@ -495,7 +495,9 @@ export function AvailabilityManager({
               </span>
             </div>
             {block.reason && (
-              <p className="text-sm text-gray-600">{block.reason}</p>
+              <p className="text-xs sm:text-sm text-gray-600 break-words">
+                {block.reason}
+              </p>
             )}
           </div>
 
@@ -504,8 +506,10 @@ export function AvailabilityManager({
               variant="destructive"
               size="sm"
               onClick={() => handleDeleteClick(block)}
+              className="self-end sm:self-center w-full sm:w-auto"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-4 w-4 sm:mr-0 mr-2" />
+              <span className="sm:hidden">Eliminar</span>
             </Button>
           )}
         </div>
@@ -528,34 +532,40 @@ export function AvailabilityManager({
     <>
       <Card className="shadow-lg border-purple-100">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <CardTitle className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
               <Ban className="h-5 w-5 text-purple-600" />
               Gestión de Disponibilidad
               {showOnlyRecent && availabilityBlocks.length > 3 && (
-                <span className="text-sm font-normal text-gray-500">
+                <span className="text-xs sm:text-sm font-normal text-gray-500 block sm:inline">
                   (Mostrando {Math.min(3, availabilityBlocks.length)} de{" "}
                   {availabilityBlocks.length})
                 </span>
               )}
             </CardTitle>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               {showOnlyRecent && availabilityBlocks.length > 3 && (
                 <Button
                   variant="outline"
                   onClick={() => setIsHistoryDialogOpen(true)}
-                  className="text-purple-600 border-purple-200 hover:bg-purple-50"
+                  className="text-purple-600 border-purple-200 hover:bg-purple-50 w-full sm:w-auto"
                 >
                   <History className="mr-2 h-4 w-4" />
-                  Ver Historial ({availabilityBlocks.length})
+                  <span className="sm:hidden">
+                    Historial ({availabilityBlocks.length})
+                  </span>
+                  <span className="hidden sm:inline">
+                    Ver Historial ({availabilityBlocks.length})
+                  </span>
                 </Button>
               )}
               <Button
-                className="bg-purple-600 hover:bg-purple-700 text-white"
+                className="bg-purple-600 hover:bg-purple-700 text-white w-full sm:w-auto"
                 onClick={() => setIsDialogOpen(true)}
               >
                 <Plus className="mr-2 h-4 w-4" />
-                Bloquear Horario
+                <span className="sm:hidden">Bloquear</span>
+                <span className="hidden sm:inline">Bloquear Horario</span>
               </Button>
             </div>
           </div>
@@ -579,9 +589,9 @@ export function AvailabilityManager({
 
       {/* Dialog para crear bloqueos */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] max-w-[95vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
               <Ban className="h-5 w-5 text-purple-600" />
               Bloquear Disponibilidad
             </DialogTitle>
@@ -590,8 +600,8 @@ export function AvailabilityManager({
           <div className="space-y-4">
             {/* Modo de bloqueo */}
             <div>
-              <Label>Modo de bloqueo</Label>
-              <div className="flex gap-2 mt-2">
+              <Label className="text-sm sm:text-base">Modo de bloqueo</Label>
+              <div className="flex flex-col sm:flex-row gap-2 mt-2">
                 <Button
                   type="button"
                   variant={blockingMode === "single" ? "default" : "outline"}
@@ -602,7 +612,7 @@ export function AvailabilityManager({
                     setEndDate(undefined);
                   }}
                   className={cn(
-                    "flex items-center gap-2",
+                    "flex items-center justify-center gap-2 w-full sm:w-auto",
                     blockingMode === "single"
                       ? "bg-purple-600 hover:bg-purple-700"
                       : ""
@@ -620,7 +630,7 @@ export function AvailabilityManager({
                     setSelectedDate(undefined);
                   }}
                   className={cn(
-                    "flex items-center gap-2",
+                    "flex items-center justify-center gap-2 w-full sm:w-auto",
                     blockingMode === "range"
                       ? "bg-purple-600 hover:bg-purple-700"
                       : ""
@@ -797,8 +807,8 @@ export function AvailabilityManager({
 
             {/* Tipo de bloqueo */}
             <div>
-              <Label>Tipo de bloqueo</Label>
-              <div className="flex gap-2 mt-2">
+              <Label className="text-sm sm:text-base">Tipo de bloqueo</Label>
+              <div className="flex flex-col sm:flex-row gap-2 mt-2">
                 <Button
                   type="button"
                   variant={isFullDay ? "default" : "outline"}
@@ -807,9 +817,10 @@ export function AvailabilityManager({
                     setIsFullDay(true);
                     setSelectedTimes([]);
                   }}
-                  className={
+                  className={cn(
+                    "w-full sm:w-auto",
                     isFullDay ? "bg-purple-600 hover:bg-purple-700" : ""
-                  }
+                  )}
                 >
                   Día completo
                 </Button>
@@ -818,9 +829,10 @@ export function AvailabilityManager({
                   variant={!isFullDay ? "default" : "outline"}
                   size="sm"
                   onClick={() => setIsFullDay(false)}
-                  className={
+                  className={cn(
+                    "w-full sm:w-auto",
                     !isFullDay ? "bg-purple-600 hover:bg-purple-700" : ""
-                  }
+                  )}
                 >
                   Horarios específicos
                 </Button>
@@ -830,31 +842,33 @@ export function AvailabilityManager({
             {/* Selección múltiple de horarios */}
             {!isFullDay && (
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <Label>Horarios a bloquear</Label>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                  <Label className="text-sm sm:text-base">
+                    Horarios a bloquear
+                  </Label>
                   <div className="flex gap-2">
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
                       onClick={selectAllTimes}
-                      className="text-xs bg-transparent"
+                      className="text-xs bg-transparent flex-1 sm:flex-none"
                     >
-                      Seleccionar todos
+                      Todos
                     </Button>
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
                       onClick={clearAllTimes}
-                      className="text-xs bg-transparent"
+                      className="text-xs bg-transparent flex-1 sm:flex-none"
                     >
                       Limpiar
                     </Button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                   {timeSlots.map((time) => (
                     <Button
                       key={time}
@@ -865,7 +879,7 @@ export function AvailabilityManager({
                       size="sm"
                       onClick={() => toggleTimeSelection(time)}
                       className={cn(
-                        "text-sm",
+                        "text-xs sm:text-sm",
                         selectedTimes.includes(time)
                           ? "bg-purple-600 hover:bg-purple-700 text-white"
                           : "hover:bg-purple-50"
@@ -878,7 +892,7 @@ export function AvailabilityManager({
 
                 {selectedTimes.length > 0 && (
                   <div className="mt-2 p-2 bg-purple-50 rounded-md">
-                    <p className="text-sm text-purple-700 font-medium mb-1">
+                    <p className="text-xs sm:text-sm text-purple-700 font-medium mb-1">
                       Horarios seleccionados ({selectedTimes.length}):
                     </p>
                     <div className="flex flex-wrap gap-1">
@@ -935,7 +949,7 @@ export function AvailabilityManager({
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-4">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4">
               <Button
                 variant="outline"
                 onClick={() => {
@@ -943,13 +957,14 @@ export function AvailabilityManager({
                   resetForm();
                 }}
                 disabled={isCreating}
+                className="w-full sm:w-auto"
               >
                 Cancelar
               </Button>
               <Button
                 onClick={handleCreateBlock}
                 disabled={isCreating}
-                className="bg-purple-600 hover:bg-purple-700"
+                className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
               >
                 {isCreating ? (
                   <>
@@ -967,9 +982,7 @@ export function AvailabilityManager({
                         isFullDay ? "Bloqueo" : `${timesCount} Bloqueo(s)`
                       }`;
                     } else {
-                      return `Crear ${totalBlocks} Bloqueo(s) (${datesCount} día${
-                        datesCount > 1 ? "s" : ""
-                      })`;
+                      return `Crear ${totalBlocks} Bloqueo(s)`;
                     }
                   })()
                 )}
@@ -981,22 +994,22 @@ export function AvailabilityManager({
 
       {/* Dialog para historial completo con altura fija */}
       <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>
-        <DialogContent className="sm:max-w-[700px] h-[85vh] flex flex-col">
+        <DialogContent className="sm:max-w-[700px] md:max-w-[768px] lg:max-w-[900px] max-w-[95vw] h-[85vh] flex flex-col">
           <DialogHeader className="flex-shrink-0 pb-4">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1 pr-4">
-                <DialogTitle className="flex items-center gap-2 text-xl">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+              <div className="flex-1">
+                <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
                   <History className="h-5 w-5 text-purple-600" />
                   Historial de Bloqueos ({availabilityBlocks.length})
                 </DialogTitle>
               </div>
             </div>
 
-            {/* Barra de controles separada */}
-            <div className="flex items-center justify-between">
+            {/* Barra de controles */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-3">
                 {isSelectMode && selectedBlocks.size > 0 && (
-                  <span className="text-sm text-gray-600 bg-purple-50 px-2 py-1 rounded-md">
+                  <span className="text-xs sm:text-sm text-gray-600 bg-purple-50 px-2 py-1 rounded-md">
                     {selectedBlocks.size} seleccionado
                     {selectedBlocks.size > 1 ? "s" : ""}
                   </span>
@@ -1009,7 +1022,7 @@ export function AvailabilityManager({
                 onClick={toggleSelectMode}
                 disabled={isBulkDeleting}
                 className={cn(
-                  "flex items-center gap-2",
+                  "flex items-center gap-2 w-full sm:w-auto",
                   isSelectMode
                     ? "bg-purple-50 border-purple-200 text-purple-700"
                     : ""
@@ -1020,15 +1033,20 @@ export function AvailabilityManager({
                 ) : (
                   <CheckSquare className="h-4 w-4" />
                 )}
-                {isSelectMode ? "Cancelar selección" : "Seleccionar múltiple"}
+                <span className="sm:hidden">
+                  {isSelectMode ? "Cancelar" : "Seleccionar"}
+                </span>
+                <span className="hidden sm:inline">
+                  {isSelectMode ? "Cancelar selección" : "Seleccionar múltiple"}
+                </span>
               </Button>
             </div>
           </DialogHeader>
 
-          {/* Barra de acciones para selección múltiple - Fija */}
+          {/* Barra de acciones para selección múltiple */}
           {isSelectMode && (
-            <div className="flex-shrink-0 flex items-center justify-between p-3 bg-purple-50 rounded-md border border-purple-200">
-              <div className="flex items-center gap-2">
+            <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-purple-50 rounded-md border border-purple-200">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 <Button
                   type="button"
                   variant="outline"
@@ -1038,6 +1056,7 @@ export function AvailabilityManager({
                     selectedBlocks.size === availabilityBlocks.length ||
                     isBulkDeleting
                   }
+                  className="w-full sm:w-auto bg-transparent"
                 >
                   Seleccionar todos
                 </Button>
@@ -1047,6 +1066,7 @@ export function AvailabilityManager({
                   size="sm"
                   onClick={clearSelection}
                   disabled={selectedBlocks.size === 0 || isBulkDeleting}
+                  className="w-full sm:w-auto bg-transparent"
                 >
                   Limpiar selección
                 </Button>
@@ -1057,7 +1077,7 @@ export function AvailabilityManager({
                 size="sm"
                 onClick={handleBulkDelete}
                 disabled={selectedBlocks.size === 0 || isBulkDeleting}
-                className="flex items-center gap-2"
+                className="flex items-center justify-center gap-2 w-full sm:w-auto"
               >
                 {isBulkDeleting ? (
                   <>
@@ -1067,7 +1087,12 @@ export function AvailabilityManager({
                 ) : (
                   <>
                     <Trash2 className="h-4 w-4" />
-                    Eliminar seleccionados ({selectedBlocks.size})
+                    <span className="sm:hidden">
+                      Eliminar ({selectedBlocks.size})
+                    </span>
+                    <span className="hidden sm:inline">
+                      Eliminar seleccionados ({selectedBlocks.size})
+                    </span>
                   </>
                 )}
               </Button>
@@ -1079,7 +1104,7 @@ export function AvailabilityManager({
             {availabilityBlocks.length === 0 ? (
               <div className="text-center py-8">
                 <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">
+                <p className="text-gray-500 text-sm sm:text-base">
                   No hay bloqueos de disponibilidad configurados.
                 </p>
               </div>
@@ -1097,6 +1122,7 @@ export function AvailabilityManager({
             <Button
               variant="outline"
               onClick={() => setIsHistoryDialogOpen(false)}
+              className="w-full sm:w-auto"
             >
               Cerrar
             </Button>
