@@ -35,15 +35,19 @@ export async function getAppointments() {
 }
 
 // Función para añadir una nueva cita
-export async function addAppointment(appointmentData: {
-    date: Date
-    time: string
-    clientName: string
-    clientEmail: string
-    clientPhone: string
-    consultationType: "ingreso" | "seguimiento"
-    notes: string
-}) {
+export async function addAppointment(
+    appointmentData: {
+        date: Date
+        time: string
+        clientName: string
+        clientEmail: string
+        clientPhone: string
+        consultationType: "ingreso" | "seguimiento"
+        notes: string
+    },
+    isAdminBooking = false,
+) {
+    // Added isAdminBooking parameter with default false
     try {
         // Validar los datos de entrada con Zod
         const validatedData = appointmentSchema.parse(appointmentData)
@@ -59,7 +63,7 @@ export async function addAppointment(appointmentData: {
                     client_phone: validatedData.clientPhone,
                     consultation_type: validatedData.consultationType,
                     notes: validatedData.notes,
-                    status: "pendiente", // Estado por defecto
+                    status: isAdminBooking ? "confirmada" : "pendiente", // Auto-confirm admin bookings
                 },
             ])
             .select("id") // Seleccionar el ID generado
@@ -79,6 +83,7 @@ export async function addAppointment(appointmentData: {
             message: "Appointment created successfully",
             id: data.id, // Devolver el ID de la cita creada
             errors: null,
+            isAdminBooking, // Return isAdminBooking flag to control WhatsApp notifications
         }
     } catch (error) {
         // Manejar errores de validación de Zod
@@ -198,10 +203,7 @@ export async function updateAppointmentStatus(
     status: "confirmada" | "pendiente" | "cancelada", // Añadir 'cancelada' como opción
 ) {
     try {
-        const { error } = await supabase
-            .from("appointments")
-            .update({ status: status })
-            .eq("id", id)
+        const { error } = await supabase.from("appointments").update({ status: status }).eq("id", id)
 
         if (error) {
             console.error("Supabase Error (updateAppointmentStatus):", error)

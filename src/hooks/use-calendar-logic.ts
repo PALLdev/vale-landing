@@ -216,39 +216,48 @@ export function useCalendarLogic(isAdminView = false) {
                 notes,
             }
 
-            const response = await addAppointment(newAppointmentData)
+            const response = await addAppointment(newAppointmentData, isAdminView)
             setIsBooking(false) // Finalizar estado de carga del botón
 
             if (response.success) {
                 const addedAppointment: Appointment = {
                     ...newAppointmentData,
                     id: response.id!,
-                    status: "pendiente", // Las citas nuevas siempre son pendientes
+                    status: isAdminView ? "confirmada" : "pendiente", // Set status based on admin view
                 }
                 setAppointments((prev) => [...prev, addedAppointment])
-                toast.success("Cita Agendada con Éxito", {
-                    description: `Tu cita para el ${format(selectedDate, "dd/MM/yyyy", { locale: es })} a las ${selectedTime} ha sido agendada. Recibirás un email de confirmación.`,
-                })
 
-                // --- NUEVA FUNCIONALIDAD: Notificación al Administrador vía WhatsApp ---
-                const adminWhatsAppNumber = "56958569502"
-                const formattedDate = format(selectedDate, "dd/MM/yyyy", { locale: es })
-                const message = encodeURIComponent(
-                    `¡Nueva cita agendada!\n\n` +
-                    `*Cliente:* ${clientName}\n` +
-                    `*Email:* ${clientEmail}\n` +
-                    `*Teléfono:* ${clientPhone}\n` +
-                    `*Fecha:* ${formattedDate}\n` +
-                    `*Hora:* ${selectedTime}\n` +
-                    `*Tipo:* ${consultationType === "ingreso" ? "Ingreso" : "Seguimiento"}\n` +
-                    (notes ? `*Notas:* ${notes}\n\n` : "\n") +
-                    `Por favor, revisa y confirma la cita en el panel de administración.`,
-                )
-                const whatsappLink = `https://wa.me/${adminWhatsAppNumber}?text=${message}`
+                if (isAdminView) {
+                    toast.success("Cita Agendada y Confirmada", {
+                        description: `La cita para ${clientName} el ${format(selectedDate, "dd/MM/yyyy", { locale: es })} a las ${selectedTime} ha sido agendada y confirmada automáticamente.`,
+                    })
+                } else {
+                    toast.success("Cita Agendada con Éxito", {
+                        description: `Tu cita para el ${format(selectedDate, "dd/MM/yyyy", { locale: es })} a las ${selectedTime} ha sido agendada. Recibirás un email de confirmación.`,
+                    })
+                }
 
-                // Abrir WhatsApp en una nueva pestaña
-                window.open(whatsappLink, "_blank")
-                // --- FIN NUEVA FUNCIONALIDAD ---
+                if (!isAdminView) {
+                    // NUEVA FUNCIONALIDAD: Notificación al Administrador vía WhatsApp
+                    const adminWhatsAppNumber = "56958569502"
+                    const formattedDate = format(selectedDate, "dd/MM/yyyy", { locale: es })
+                    const message = encodeURIComponent(
+                        `¡Nueva cita agendada!\n\n` +
+                        `*Cliente:* ${clientName}\n` +
+                        `*Email:* ${clientEmail}\n` +
+                        `*Teléfono:* ${clientPhone}\n` +
+                        `*Fecha:* ${formattedDate}\n` +
+                        `*Hora:* ${selectedTime}\n` +
+                        `*Tipo:* ${consultationType === "ingreso" ? "Ingreso" : "Seguimiento"}\n` +
+                        (notes ? `*Notas:* ${notes}\n\n` : "\n") +
+                        `Por favor, revisa y confirma la cita en el panel de administración.`,
+                    )
+                    const whatsappLink = `https://wa.me/${adminWhatsAppNumber}?text=${message}`
+
+                    // Abrir WhatsApp en una nueva pestaña
+                    window.open(whatsappLink, "_blank")
+                    // FIN NUEVA FUNCIONALIDAD
+                }
 
                 // Reset form
                 setClientName("")
@@ -285,6 +294,7 @@ export function useCalendarLogic(isAdminView = false) {
             consultationType,
             notes,
             maxSelectableDate,
+            isAdminView, // Add isAdminView to dependencies
         ],
     )
 
