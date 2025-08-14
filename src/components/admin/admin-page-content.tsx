@@ -9,6 +9,10 @@ import { getAvailabilityBlocks } from "@/actions/availability";
 import { Button } from "@/components/ui/button";
 import { AdminBookingModal } from "@/components/admin/admin-booking-modal";
 import { AvailabilityManager } from "@/components/admin/availability-manager";
+import { PendingAppointmentsIndicator } from "@/components/admin/pending-appointments-indicator";
+import { updateAppointmentStatus } from "@/actions/appointments";
+import { toast } from "sonner";
+import type { Appointment } from "@/types/calendar";
 
 export function AdminCalendarPageContent() {
   const {
@@ -75,6 +79,90 @@ export function AdminCalendarPageContent() {
     setIsBookingModalOpen(true);
   }, []);
 
+  const handleConfirmFromIndicator = async (appointmentId: string) => {
+    const response = await updateAppointmentStatus(appointmentId, "confirmada");
+
+    if (response.success) {
+      const appointment = appointments.find(
+        (appt) => appt.id === appointmentId
+      );
+      if (appointment) {
+        toast.success("Cita Confirmada", {
+          description: `La cita de ${appointment.clientName} ha sido confirmada exitosamente.`,
+        });
+
+        // Send WhatsApp notification
+        const formattedDate = format(appointment.date, "dd MMMM yyyy", {
+          locale: es,
+        });
+        const message = encodeURIComponent(
+          `¡Hola ${
+            appointment.clientName
+          }!\n\nTu cita nutricional ha sido *CONFIRMADA*.\n\n*Detalles:*\nFecha: ${formattedDate}\nHora: ${
+            appointment.time
+          }\nTipo: ${
+            appointment.consultationType === "ingreso"
+              ? "Ingreso"
+              : "Seguimiento"
+          }\n\n¡Te esperamos!`
+        );
+        const whatsappLink = `https://wa.me/${appointment.clientPhone}?text=${message}`;
+        window.open(whatsappLink, "_blank");
+      }
+
+      refetchAppointments();
+    } else {
+      toast.error("Error al Confirmar Cita", {
+        description:
+          response.message || "No se pudo confirmar la cita. Intenta de nuevo.",
+      });
+    }
+  };
+
+  const handleCancelFromIndicator = async (appointmentId: string) => {
+    const response = await updateAppointmentStatus(appointmentId, "cancelada");
+
+    if (response.success) {
+      const appointment = appointments.find(
+        (appt) => appt.id === appointmentId
+      );
+      if (appointment) {
+        toast.success("Cita Cancelada", {
+          description: `La cita de ${appointment.clientName} ha sido cancelada exitosamente.`,
+        });
+
+        // Send WhatsApp notification
+        const formattedDate = format(appointment.date, "dd MMMM yyyy", {
+          locale: es,
+        });
+        const message = encodeURIComponent(
+          `¡Hola ${appointment.clientName}!\n\nTu cita nutricional para el ${formattedDate} a las ${appointment.time} ha sido *CANCELADA*.\n\nSi deseas reagendar, por favor visita nuestra página de agendamiento.`
+        );
+        const whatsappLink = `https://wa.me/${appointment.clientPhone}?text=${message}`;
+        window.open(whatsappLink, "_blank");
+      }
+
+      refetchAppointments();
+    } else {
+      toast.error("Error al Cancelar Cita", {
+        description:
+          response.message || "No se pudo cancelar la cita. Intenta de nuevo.",
+      });
+    }
+  };
+
+  const handleViewFromIndicator = (appointment: Appointment) => {
+    // Find the date and select it to show the appointment in the list
+    handleDateSelect(appointment.date);
+    // Scroll to appointments list
+    if (appointmentsListRef.current) {
+      appointmentsListRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
+
   if (isLoadingAppointments) {
     return (
       <div className="flex justify-center items-center h-[650px] text-purple-600">
@@ -86,6 +174,15 @@ export function AdminCalendarPageContent() {
 
   return (
     <>
+      <div className="mb-6">
+        <PendingAppointmentsIndicator
+          appointments={appointments}
+          onConfirmAppointment={handleConfirmFromIndicator}
+          onCancelAppointment={handleCancelFromIndicator}
+          onViewAppointment={handleViewFromIndicator}
+        />
+      </div>
+
       <div className="flex justify-end mb-6">
         <Button
           onClick={() => handleOpenBookingModal()}
