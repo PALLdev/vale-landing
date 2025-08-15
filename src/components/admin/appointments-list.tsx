@@ -21,8 +21,10 @@ import {
   CheckCircle2,
   XCircle,
   MessageCircle,
+  UserPlus,
 } from "lucide-react";
 import { AppointmentModal } from "@/components/admin/appointments-modal";
+import { ConvertToPatientModal } from "@/components/admin/convert-to-patient-modal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -79,6 +81,10 @@ export function AppointmentsList({
   const [statusChangeType, setStatusChangeType] = useState<
     "confirm" | "cancel" | null
   >(null);
+
+  const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
+  const [appointmentToConvert, setAppointmentToConvert] =
+    useState<Appointment | null>(null);
 
   const filteredAppointments = selectedDate
     ? appointments.filter((appt) => isSameDay(appt.date, selectedDate))
@@ -198,6 +204,19 @@ export function AppointmentsList({
     setStatusChangeType(null);
   };
   // --- FIN NUEVAS FUNCIONES ---
+
+  const handleConvertToPatient = (appointment: Appointment) => {
+    setAppointmentToConvert(appointment);
+    setIsConvertModalOpen(true);
+  };
+
+  const handleConvertSuccess = () => {
+    toast.success("Paciente Creado", {
+      description: `${appointmentToConvert?.clientName} ha sido agregado como paciente exitosamente.`,
+    });
+    setIsConvertModalOpen(false);
+    setAppointmentToConvert(null);
+  };
 
   return (
     <>
@@ -330,6 +349,17 @@ export function AppointmentsList({
                                 </Button>
                               </>
                             )}
+                            {appt.status === "confirmada" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="bg-blue-50 hover:bg-blue-100 text-blue-700"
+                                onClick={() => handleConvertToPatient(appt)}
+                              >
+                                <UserPlus className="h-4 w-4 mr-1" /> Agregar
+                                como Paciente
+                              </Button>
+                            )}
                             <Button
                               variant="outline"
                               size="sm"
@@ -387,6 +417,18 @@ export function AppointmentsList({
           mode={modalMode}
           onSaveSuccess={onAppointmentUpdated}
           allAppointments={appointments}
+        />
+      )}
+
+      {appointmentToConvert && (
+        <ConvertToPatientModal
+          appointment={appointmentToConvert}
+          isOpen={isConvertModalOpen}
+          onClose={() => {
+            setIsConvertModalOpen(false);
+            setAppointmentToConvert(null);
+          }}
+          onSuccess={handleConvertSuccess}
         />
       )}
 

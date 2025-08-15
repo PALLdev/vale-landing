@@ -3,10 +3,12 @@ import { useRef, useCallback, useState } from "react";
 import { useCalendarLogic } from "@/hooks/use-calendar-logic";
 import { CalendarGrid } from "@/components/calendar/calendar-grid";
 import { AppointmentsList } from "@/components/admin/appointments-list";
-import { Loader2, PlusCircle } from "lucide-react";
+import { PatientsList } from "@/components/admin/patients-list";
+import { Loader2, PlusCircle, Calendar, Users } from "lucide-react";
 import { getAppointments } from "@/actions/appointments";
 import { getAvailabilityBlocks } from "@/actions/availability";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminBookingModal } from "@/components/admin/admin-booking-modal";
 import { AvailabilityManager } from "@/components/admin/availability-manager";
 import { PendingAppointmentsIndicator } from "@/components/admin/pending-appointments-indicator";
@@ -44,6 +46,7 @@ export function AdminCalendarPageContent() {
   const [initialBookingDate, setInitialBookingDate] = useState<
     Date | undefined
   >(undefined);
+  const [activeTab, setActiveTab] = useState("calendar");
 
   const handleDateSelectAndScroll = (date: Date) => {
     handleDateSelect(date);
@@ -167,72 +170,91 @@ export function AdminCalendarPageContent() {
     return (
       <div className="flex justify-center items-center h-[650px] text-purple-600">
         <Loader2 className="h-10 w-10 animate-spin mr-2" />
-        <span className="text-xl font-semibold">Cargando citas...</span>
+        <span className="text-xl font-semibold">Cargando...</span>
       </div>
     );
   }
 
   return (
-    <>
-      <div className="mb-6">
-        <PendingAppointmentsIndicator
-          appointments={appointments}
-          onConfirmAppointment={handleConfirmFromIndicator}
-          onCancelAppointment={handleCancelFromIndicator}
-          onViewAppointment={handleViewFromIndicator}
-        />
-      </div>
+    <div className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="calendar" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            Calendario
+          </TabsTrigger>
+          <TabsTrigger value="patients" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Pacientes
+          </TabsTrigger>
+        </TabsList>
 
-      <div className="flex justify-end mb-6">
-        <Button
-          onClick={() => handleOpenBookingModal()}
-          className="bg-purple-600 hover:bg-purple-700 text-white"
-        >
-          <PlusCircle className="mr-2 h-4 w-4" /> Agendar Nueva Cita
-        </Button>
-      </div>
+        <TabsContent value="calendar" className="space-y-6">
+          <div className="mb-6">
+            <PendingAppointmentsIndicator
+              appointments={appointments}
+              onConfirmAppointment={handleConfirmFromIndicator}
+              onCancelAppointment={handleCancelFromIndicator}
+              onViewAppointment={handleViewFromIndicator}
+            />
+          </div>
 
-      <div className="grid lg:grid-cols-[2fr_1fr] gap-8">
-        <CalendarGrid
-          currentMonth={currentMonth}
-          selectedDate={selectedDate}
-          daysInMonth={daysInMonth}
-          startingDayIndex={startingDayIndex}
-          daysOfWeek={daysOfWeek}
-          handlePrevMonth={handlePrevMonth}
-          handleNextMonth={handleNextMonth}
-          handleDateSelect={handleDateSelectAndScroll}
-          isPast={isPast}
-          isToday={isToday}
-          isSameDay={isSameDay}
-          format={format}
-          es={es}
-          isDayFullyBooked={isDayFullyBooked}
-          appointments={appointments}
-          showAppointmentIndicator={true}
-          maxSelectableDate={maxSelectableDate}
-          availabilityBlocks={availabilityBlocks}
-          isAdminView={true} // Pasar isAdminView como true
-        />
+          <div className="flex justify-end mb-6">
+            <Button
+              onClick={() => handleOpenBookingModal()}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              <PlusCircle className="mr-2 h-4 w-4" /> Agendar Nueva Cita
+            </Button>
+          </div>
 
-        <div className="space-y-8 scroll-mt-20" ref={appointmentsListRef}>
-          <AppointmentsList
-            selectedDate={selectedDate}
-            appointments={appointments}
-            format={format}
-            es={es}
-            onAppointmentUpdated={refetchAppointments}
-            onBookNewAppointment={handleOpenBookingModal}
-          />
-        </div>
-      </div>
+          <div className="grid lg:grid-cols-[2fr_1fr] gap-8">
+            <CalendarGrid
+              currentMonth={currentMonth}
+              selectedDate={selectedDate}
+              daysInMonth={daysInMonth}
+              startingDayIndex={startingDayIndex}
+              daysOfWeek={daysOfWeek}
+              handlePrevMonth={handlePrevMonth}
+              handleNextMonth={handleNextMonth}
+              handleDateSelect={handleDateSelectAndScroll}
+              isPast={isPast}
+              isToday={isToday}
+              isSameDay={isSameDay}
+              format={format}
+              es={es}
+              isDayFullyBooked={isDayFullyBooked}
+              appointments={appointments}
+              showAppointmentIndicator={true}
+              maxSelectableDate={maxSelectableDate}
+              availabilityBlocks={availabilityBlocks}
+              isAdminView={true} // Pasar isAdminView como true
+            />
 
-      <div className="mt-8">
-        <AvailabilityManager
-          onAvailabilityChange={refetchAppointments}
-          showOnlyRecent={true}
-        />
-      </div>
+            <div className="space-y-8 scroll-mt-20" ref={appointmentsListRef}>
+              <AppointmentsList
+                selectedDate={selectedDate}
+                appointments={appointments}
+                format={format}
+                es={es}
+                onAppointmentUpdated={refetchAppointments}
+                onBookNewAppointment={handleOpenBookingModal}
+              />
+            </div>
+          </div>
+
+          <div className="mt-8">
+            <AvailabilityManager
+              onAvailabilityChange={refetchAppointments}
+              showOnlyRecent={true}
+            />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="patients">
+          <PatientsList />
+        </TabsContent>
+      </Tabs>
 
       <AdminBookingModal
         isOpen={isBookingModalOpen}
@@ -240,6 +262,6 @@ export function AdminCalendarPageContent() {
         onAppointmentBooked={refetchAppointments}
         initialDate={initialBookingDate}
       />
-    </>
+    </div>
   );
 }
