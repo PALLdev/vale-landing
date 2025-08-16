@@ -33,19 +33,9 @@ export async function getAvailabilityBlocks() {
             throw new Error("Failed to fetch availability blocks.")
         }
 
-        console.log("=== LEYENDO BLOQUEOS DE LA DB ===")
-        console.log("Datos raw de Supabase:", data.slice(0, 2)) // Solo los primeros 2 para no saturar
-
         const blocks: AvailabilityBlock[] = data.map((block) => {
-            console.log(`Procesando bloqueo ${block.id}:`)
-            console.log(`  - date raw de DB: "${block.date}" (tipo: ${typeof block.date})`)
 
             const dateFromHelper = createDateFromString(block.date)
-            console.log(`  - Date creado con helper: ${dateFromHelper}`)
-            console.log(`  - Fecha local: ${dateFromHelper.toLocaleDateString()}`)
-            console.log(`  - getFullYear(): ${dateFromHelper.getFullYear()}`)
-            console.log(`  - getMonth(): ${dateFromHelper.getMonth()}`)
-            console.log(`  - getDate(): ${dateFromHelper.getDate()}`)
 
             return {
                 id: block.id,
@@ -58,20 +48,6 @@ export async function getAvailabilityBlocks() {
             }
         })
 
-        console.log("=== BLOQUEOS PROCESADOS ===")
-        console.log(
-            "Primeros 2 bloqueos procesados:",
-            blocks.slice(0, 2).map((b) => ({
-                id: b.id,
-                date: b.date,
-                dateString: b.date.toISOString().split("T")[0],
-                localDate: b.date.toLocaleDateString(),
-                day: b.date.getDate(),
-                month: b.date.getMonth() + 1,
-                year: b.date.getFullYear(),
-            })),
-        )
-
         return blocks
     } catch (error) {
         console.error("Server Action Error (getAvailabilityBlocks):", error)
@@ -83,12 +59,6 @@ export async function getAvailabilityBlocks() {
 export async function createAvailabilityBlock(blockData: CreateAvailabilityBlockInput) {
     try {
         const validatedData = availabilityBlockSchema.parse(blockData)
-
-        console.log("=== SERVIDOR - Creando bloqueo ===")
-        console.log("dateString recibido:", validatedData.dateString)
-        console.log("timeSlot:", validatedData.timeSlot)
-        console.log("blockType:", validatedData.blockType)
-        console.log("Zona horaria del servidor:", Intl.DateTimeFormat().resolvedOptions().timeZone)
 
         const { data, error } = await supabase
             .from("availability_blocks")
@@ -116,10 +86,6 @@ export async function createAvailabilityBlock(blockData: CreateAvailabilityBlock
                 message: error.message || "Failed to create availability block",
             }
         }
-
-        console.log("✅ Bloqueo creado exitosamente")
-        console.log("Datos guardados en DB:", data)
-        console.log("Fecha guardada en DB:", data.date, "(tipo:", typeof data.date, ")")
 
         return {
             success: true,
@@ -178,10 +144,7 @@ export async function isTimeSlotBlocked(date: Date, timeSlot?: string): Promise<
         const day = String(date.getDate()).padStart(2, "0")
         const dateString = `${year}-${month}-${day}`
 
-        console.log("=== VERIFICANDO BLOQUEO ===")
-        console.log("Fecha original:", date)
-        console.log("String generado:", dateString)
-        console.log("TimeSlot:", timeSlot)
+
 
         const { data, error } = await supabase
             .from("availability_blocks")
@@ -194,9 +157,7 @@ export async function isTimeSlotBlocked(date: Date, timeSlot?: string): Promise<
             return false // En caso de error, asumir que no está bloqueado
         }
 
-        console.log("Bloqueos encontrados:", data)
         const isBlocked = data.length > 0
-        console.log("¿Está bloqueado?", isBlocked)
 
         return isBlocked
     } catch (error) {

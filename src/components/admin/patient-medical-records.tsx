@@ -20,6 +20,7 @@ import {
   ArrowLeft,
   List,
   TimerIcon as Timeline,
+  Paperclip,
 } from "lucide-react";
 import {
   getMedicalRecordsByPatient,
@@ -30,6 +31,7 @@ import type { Patient } from "@/actions/patients";
 import { AddMedicalRecordModal } from "./add-medical-record-modal";
 import { EditMedicalRecordModal } from "./edit-medical-record-modal";
 import { MedicalRecordsTimeline } from "./medical-records-timeline";
+import { AttachmentsManager } from "./attachments-manager";
 
 interface PatientMedicalRecordsProps {
   patient: Patient;
@@ -49,6 +51,9 @@ export function PatientMedicalRecords({
     null
   );
   const [viewMode, setViewMode] = useState<"list" | "timeline">("timeline");
+  const [viewingAttachments, setViewingAttachments] = useState<string | null>(
+    null
+  );
 
   const formatRut = (rut: string) => {
     const cleaned = rut.replace(/[^0-9kK]/g, "");
@@ -130,7 +135,7 @@ export function PatientMedicalRecords({
             </Button>
             <div>
               <DialogTitle>Fichas Médicas</DialogTitle>
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-muted-foreground">
                 Paciente:{" "}
                 <span className="font-medium">
                   {patient.name || "Sin nombre"}
@@ -146,7 +151,7 @@ export function PatientMedicalRecords({
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
             <div>
               <h3 className="text-lg font-medium">Historial de Sesiones</h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 {records.length}{" "}
                 {records.length === 1
                   ? "ficha registrada"
@@ -177,7 +182,7 @@ export function PatientMedicalRecords({
               </Tabs>
               <Button
                 onClick={() => setIsAddModalOpen(true)}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 bg-[var(--color-prim)] hover:bg-[var(--color-prim-dark)] text-white"
               >
                 <Plus className="h-4 w-4" />
                 Nueva Ficha
@@ -189,23 +194,25 @@ export function PatientMedicalRecords({
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">Cargando fichas médicas...</p>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-prim)] mx-auto mb-4"></div>
+                <p className="text-muted-foreground">
+                  Cargando fichas médicas...
+                </p>
               </div>
             </div>
           ) : records.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <FileText className="h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">
                   No hay fichas médicas registradas
                 </h3>
-                <p className="text-gray-600 text-center mb-4">
+                <p className="text-muted-foreground text-center mb-4">
                   Comienza creando la primera ficha médica para este paciente
                 </p>
                 <Button
                   onClick={() => setIsAddModalOpen(true)}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 bg-[var(--color-prim)] hover:bg-[var(--color-prim-dark)] text-white"
                 >
                   <Plus className="h-4 w-4" />
                   Crear Primera Ficha
@@ -237,8 +244,8 @@ export function PatientMedicalRecords({
                       <CardHeader className="pb-3">
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                              <FileText className="h-5 w-5 text-green-600" />
+                            <div className="h-10 w-10 rounded-full bg-[var(--color-prim-very-lighter)] flex items-center justify-center dark:bg-[var(--color-prim-darker)]/30">
+                              <FileText className="h-5 w-5 text-[var(--color-prim)]" />
                             </div>
                             <div>
                               <CardTitle className="text-lg flex items-center gap-2">
@@ -254,7 +261,17 @@ export function PatientMedicalRecords({
                             <Button
                               variant="ghost"
                               size="sm"
+                              onClick={() => setViewingAttachments(record.id)}
+                              className="hover:bg-[var(--color-prim-very-lighter)] hover:text-[var(--color-prim)]"
+                              title="Ver archivos adjuntos"
+                            >
+                              <Paperclip className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => setEditingRecord(record)}
+                              className="hover:bg-[var(--color-prim-very-lighter)] hover:text-[var(--color-prim)]"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -262,7 +279,7 @@ export function PatientMedicalRecords({
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteRecord(record.id)}
-                              className="text-red-600 hover:text-red-700"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -272,20 +289,20 @@ export function PatientMedicalRecords({
                       <CardContent className="pt-0">
                         <div className="space-y-3">
                           <div>
-                            <h4 className="font-medium text-sm text-gray-700 mb-1">
+                            <h4 className="font-medium text-sm text-muted-foreground mb-1">
                               Notas de la Sesión:
                             </h4>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-foreground">
                               {record.session_notes}
                             </p>
                           </div>
 
                           {record.diagnosis && (
                             <div>
-                              <h4 className="font-medium text-sm text-gray-700 mb-1">
+                              <h4 className="font-medium text-sm text-muted-foreground mb-1">
                                 Diagnóstico:
                               </h4>
-                              <p className="text-sm text-gray-600">
+                              <p className="text-sm text-foreground">
                                 {record.diagnosis}
                               </p>
                             </div>
@@ -293,10 +310,10 @@ export function PatientMedicalRecords({
 
                           {record.treatment && (
                             <div>
-                              <h4 className="font-medium text-sm text-gray-700 mb-1">
+                              <h4 className="font-medium text-sm text-muted-foreground mb-1">
                                 Tratamiento:
                               </h4>
-                              <p className="text-sm text-gray-600">
+                              <p className="text-sm text-foreground">
                                 {record.treatment}
                               </p>
                             </div>
@@ -304,14 +321,21 @@ export function PatientMedicalRecords({
 
                           {record.observations && (
                             <div>
-                              <h4 className="font-medium text-sm text-gray-700 mb-1">
+                              <h4 className="font-medium text-sm text-muted-foreground mb-1">
                                 Observaciones:
                               </h4>
-                              <p className="text-sm text-gray-600">
+                              <p className="text-sm text-foreground">
                                 {record.observations}
                               </p>
                             </div>
                           )}
+
+                          <div className="pt-2 border-t">
+                            <AttachmentsManager
+                              medicalRecordId={record.id}
+                              canDelete={true}
+                            />
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -337,6 +361,23 @@ export function PatientMedicalRecords({
             onClose={() => setEditingRecord(null)}
             onSuccess={loadRecords}
           />
+        )}
+
+        {viewingAttachments && (
+          <Dialog
+            open={!!viewingAttachments}
+            onOpenChange={() => setViewingAttachments(null)}
+          >
+            <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Archivos Adjuntos</DialogTitle>
+              </DialogHeader>
+              <AttachmentsManager
+                medicalRecordId={viewingAttachments}
+                canDelete={true}
+              />
+            </DialogContent>
+          </Dialog>
         )}
       </DialogContent>
     </Dialog>

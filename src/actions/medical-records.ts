@@ -51,6 +51,7 @@ export async function getMedicalRecordsByPatient(patientId: string): Promise<Med
     `)
         .eq("patient_id", patientId)
         .order("session_date", { ascending: false })
+        .order("created_at", { ascending: false })
 
     if (error) {
         console.error("Error fetching medical records:", error)
@@ -70,6 +71,7 @@ export async function getAllMedicalRecords(): Promise<MedicalRecord[]> {
       patient:patients(id, rut, name, email, phone)
     `)
         .order("session_date", { ascending: false })
+        .order("created_at", { ascending: false })
 
     if (error) {
         console.error("Error fetching all medical records:", error)

@@ -168,8 +168,7 @@ export function AvailabilityManager({
     try {
       const blocks = await getAvailabilityBlocks();
       setAvailabilityBlocks(blocks);
-    } catch (error) {
-      console.log("Error loading availability blocks:", error);
+    } catch (_) {
       toast.error("Error al cargar bloqueos", {
         description: "No se pudieron cargar los bloqueos de disponibilidad.",
       });
