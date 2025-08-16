@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -75,7 +75,16 @@ export function PatientMedicalRecords({
     });
   };
 
-  const loadRecords = useCallback(async () => {
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString("es-CL", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const loadRecords = async () => {
     try {
       setIsLoading(true);
       const data = await getMedicalRecordsByPatient(patient.id);
@@ -85,7 +94,7 @@ export function PatientMedicalRecords({
     } finally {
       setIsLoading(false);
     }
-  }, [patient.id]);
+  };
 
   const handleDeleteRecord = async (id: string) => {
     if (
@@ -109,7 +118,7 @@ export function PatientMedicalRecords({
     if (isOpen) {
       loadRecords();
     }
-  }, [isOpen, patient.id, loadRecords]);
+  }, [isOpen, patient.id]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -237,7 +246,7 @@ export function PatientMedicalRecords({
                                 {formatDate(record.session_date)}
                               </CardTitle>
                               <Badge variant="outline" className="text-xs">
-                                Creada: {formatDate(record.created_at)}
+                                Creada: {formatTimestamp(record.created_at)}
                               </Badge>
                             </div>
                           </div>
