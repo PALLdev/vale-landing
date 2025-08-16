@@ -31,12 +31,6 @@ export function AddMedicalRecordModal({
   onClose,
   onSuccess,
 }: AddMedicalRecordModalProps) {
-  console.log("[v0] AddMedicalRecordModal rendered", {
-    isOpen,
-    patientId: patient.id,
-    showFileUpload: false,
-  });
-
   const getTodayLocalDate = () => {
     const today = new Date();
     const year = today.getFullYear();
@@ -70,7 +64,6 @@ export function AddMedicalRecordModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("[v0] Form submitted", formData);
     setIsLoading(true);
     setError("");
 
@@ -84,12 +77,8 @@ export function AddMedicalRecordModal({
         observations: formData.observations.trim() || undefined,
       });
 
-      console.log("[v0] Medical record created successfully", {
-        recordId: newRecord.id,
-      });
       setCreatedRecordId(newRecord.id);
       setShowFileUpload(true);
-      console.log("[v0] Switching to file upload view");
 
       setFormData({
         session_date: getTodayLocalDate(),

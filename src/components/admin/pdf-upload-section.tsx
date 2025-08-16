@@ -22,21 +22,12 @@ interface PdfUploadSectionProps {
   onUploadComplete?: () => void;
 }
 
-export function PdfUploadSection({
-  medicalRecordId,
-  onUploadComplete,
-}: PdfUploadSectionProps) {
+export function PdfUploadSection({ medicalRecordId }: PdfUploadSectionProps) {
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  console.log(
-    "[v0] PdfUploadSection initialized with medicalRecordId:",
-    medicalRecordId
-  );
-
   const handleFilesChange = (newFiles: FileWithPreview[]) => {
-    console.log("[v0] Files changed, new count:", newFiles.length);
     const existingFiles = files.filter((f) => f.uploaded);
     const newUniqueFiles = newFiles.filter(
       (newFile) =>
@@ -55,9 +46,6 @@ export function PdfUploadSection({
       return;
     }
 
-    console.log("[v0] Starting upload process for", validFiles.length, "files");
-    console.log("[v0] Medical Record ID:", medicalRecordId);
-
     setUploading(true);
     setUploadProgress(0);
 
@@ -66,38 +54,21 @@ export function PdfUploadSection({
 
     for (let i = 0; i < validFiles.length; i++) {
       const file = validFiles[i];
-      console.log(
-        "[v0] Processing file:",
-        file.name,
-        "Size:",
-        file.size,
-        "Type:",
-        file.type
-      );
 
       try {
         const validationError = validateFile(file);
         if (validationError) {
-          console.log("[v0] File validation failed:", validationError);
           errorCount++;
           continue;
         }
-        console.log("[v0] File validation passed");
-
-        console.log("[v0] Compressing file...");
         const compressedFile = await compressPDF(file);
-        console.log("[v0] File compressed, new size:", compressedFile.size);
-
-        console.log("[v0] Uploading file to Supabase...");
         const result = await uploadAttachment(
           medicalRecordId,
           file,
           compressedFile
         );
-        console.log("[v0] Upload result:", result);
 
         if (result.success) {
-          console.log("[v0] File uploaded successfully:", result.attachment);
           successCount++;
           setFiles((prevFiles) =>
             prevFiles.map((f) =>
@@ -105,25 +76,16 @@ export function PdfUploadSection({
             )
           );
         } else {
-          console.log("[v0] Upload failed:", result.error);
           errorCount++;
           toast.error(`Error al subir ${file.name}: ${result.error}`);
         }
       } catch (error) {
-        console.log("[v0] Unexpected error uploading file:", error);
         errorCount++;
         toast.error(`Error inesperado al subir ${file.name}`);
       }
 
       setUploadProgress(((i + 1) / validFiles.length) * 100);
     }
-
-    console.log(
-      "[v0] Upload process completed. Success:",
-      successCount,
-      "Errors:",
-      errorCount
-    );
 
     setUploading(false);
     setUploadProgress(0);
