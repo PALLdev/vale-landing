@@ -17,6 +17,14 @@ import { User, Calendar, Mail, Phone, UserPlus } from "lucide-react";
 import { createPatient, getPatientByRut } from "@/actions/patients";
 import type { Appointment } from "@/types/calendar";
 
+interface ExistingPatient {
+  id: string;
+  rut: string;
+  name?: string; // Made name optional to match Patient type
+  email?: string;
+  phone?: string;
+}
+
 interface ConvertToPatientModalProps {
   appointment: Appointment;
   isOpen: boolean;
@@ -38,7 +46,8 @@ export function ConvertToPatientModal({
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [existingPatient, setExistingPatient] = useState<any>(null);
+  const [existingPatient, setExistingPatient] =
+    useState<ExistingPatient | null>(null);
 
   const formatRutInput = (value: string) => {
     // Remover caracteres no válidos
@@ -70,7 +79,7 @@ export function ConvertToPatientModal({
         if (existing) {
           setExistingPatient(existing);
         }
-      } catch (error) {
+      } catch {
         // Error al buscar, pero no mostramos nada al usuario
       }
     }
@@ -263,7 +272,7 @@ export function ConvertToPatientModal({
             </Button>
             <Button
               type="submit"
-              disabled={isLoading || !formData.rut || existingPatient}
+              disabled={isLoading || !formData.rut || !!existingPatient}
               className="flex-1"
             >
               {isLoading ? "Creando..." : "Crear Paciente"}
