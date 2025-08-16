@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { isSameDay } from "date-fns";
 import type { es } from "date-fns/locale";
-import type { Appointment } from "@/types/calendar"; // Aseguramos la importación correcta
+import type { Appointment } from "@/types/calendar";
 import {
   Clock,
   Mail,

@@ -109,7 +109,7 @@ export function PatientMedicalRecords({
     if (isOpen) {
       loadRecords();
     }
-  }, [isOpen, patient.id]);
+  }, [isOpen, patient.id, loadRecords]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

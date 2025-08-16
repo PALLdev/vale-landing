@@ -14,7 +14,6 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
 
   // Usar el nuevo hook para gestionar la sesión de autenticación
   const { user, isLoading } = useAuthSession();

@@ -28,7 +28,6 @@ export function generateTimeSlots(
     const breakStartHour = 14 // 2 PM
     const breakEndHour = 15 // 3 PM
 
-    const now = new Date()
     const isSelectedDateToday = isToday(date)
     const isSelectedDatePast = isPast(date) && !isSelectedDateToday
 
