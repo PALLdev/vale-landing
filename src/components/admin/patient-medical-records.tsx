@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -75,7 +75,7 @@ export function PatientMedicalRecords({
     });
   };
 
-  const loadRecords = async () => {
+  const loadRecords = useCallback(async () => {
     try {
       setIsLoading(true);
       const data = await getMedicalRecordsByPatient(patient.id);
@@ -85,7 +85,7 @@ export function PatientMedicalRecords({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [patient.id]);
 
   const handleDeleteRecord = async (id: string) => {
     if (
