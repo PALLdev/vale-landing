@@ -169,6 +169,7 @@ export function AvailabilityManager({
       const blocks = await getAvailabilityBlocks();
       setAvailabilityBlocks(blocks);
     } catch (error) {
+      console.log("Error loading availability blocks:", error);
       toast.error("Error al cargar bloqueos", {
         description: "No se pudieron cargar los bloqueos de disponibilidad.",
       });
@@ -421,6 +422,7 @@ export function AvailabilityManager({
       clearSelection();
       setIsSelectMode(false);
     } catch (error) {
+      console.log("Error deleting blocks:", error);
       toast.error("Error al eliminar bloqueos", {
         description:
           "Ocurrió un error inesperado al eliminar los bloqueos seleccionados.",

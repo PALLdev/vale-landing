@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { Menu, X, LogOut, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { signOut } from "@/actions/auth";
 import { toast } from "sonner";
 import { useAuthSession } from "@/hooks/use-auth-session"; // Importar el nuevo hook
