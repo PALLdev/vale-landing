@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { isSameDay } from "date-fns";
 import type { es } from "date-fns/locale";
-import type { Appointment } from "@/types/calendar";
+import type { Appointment } from "@/types/calendar"; // Aseguramos la importación correcta
 import {
   Clock,
   Mail,
@@ -251,141 +251,137 @@ export function AppointmentsList({
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {filteredAppointments.map(
-                    (
-                      appt: Appointment // Explicitly type appt here
-                    ) => (
-                      <Card key={appt.id} className="border-gray-200 shadow-sm">
-                        <CardContent className="p-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                            {/* Hora */}
-                            <div className="flex items-center min-w-0">
-                              <Clock className="h-4 w-4 text-purple-500 mr-2" />
-                              <span className="font-semibold">{appt.time}</span>
-                            </div>
-                            {/* Nombre Completo */}
-                            <div className="flex items-center min-w-0">
-                              <User className="h-4 w-4 text-purple-500 mr-2" />
-                              <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap flex-1 w-0">
-                                {appt.clientName}
-                              </span>
-                            </div>
-                            {/* Email */}
-                            <div className="flex items-center min-w-0">
-                              <Mail className="h-4 w-4 text-purple-500 mr-2" />
-                              <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap flex-1 w-0">
-                                {appt.clientEmail}
-                              </span>
-                            </div>
-                            {/* Teléfono */}
-                            <div className="flex items-center min-w-0">
-                              <Phone className="h-4 w-4 text-purple-500 mr-2" />
-                              <span>{appt.clientPhone}</span>
-                            </div>
-                            {/* Tipo de Consulta */}
-                            <div className="flex items-center col-span-full min-w-0">
-                              <Info className="h-4 w-4 text-purple-500 mr-2" />
-                              <span>
-                                Tipo:{" "}
-                                {appt.consultationType === "ingreso"
-                                  ? "Ingreso"
-                                  : "Seguimiento"}
-                              </span>
-                            </div>
-                            {/* Notas Adicionales */}
-                            {appt.notes && (
-                              <div className="flex items-start gap-2 col-span-full min-w-0">
-                                <ClipboardList className="h-4 w-4 text-purple-500 mt-1" />
-                                <p className="flex-1 w-0 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
-                                  Notas: {appt.notes}
-                                </p>
-                              </div>
-                            )}
-                            {/* Estado de la cita */}
-                            <div className="flex items-center col-span-full min-w-0">
-                              {appt.status === "pendiente" && (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                  <Clock className="h-3 w-3 mr-1" /> Pendiente
-                                </span>
-                              )}
-                              {appt.status === "confirmada" && (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                  <CheckCircle2 className="h-3 w-3 mr-1" />{" "}
-                                  Confirmada
-                                </span>
-                              )}
-                              {appt.status === "cancelada" && (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                  <XCircle className="h-3 w-3 mr-1" /> Cancelada
-                                </span>
-                              )}
-                            </div>
+                  {filteredAppointments.map((appt: Appointment) => (
+                    <Card key={appt.id} className="border-gray-200 shadow-sm">
+                      <CardContent className="p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                          {/* Hora */}
+                          <div className="flex items-center min-w-0">
+                            <Clock className="h-4 w-4 text-purple-500 mr-2" />
+                            <span className="font-semibold">{appt.time}</span>
                           </div>
-                          <div className="flex flex-wrap justify-end gap-2 mt-4">
+                          {/* Nombre Completo */}
+                          <div className="flex items-center min-w-0">
+                            <User className="h-4 w-4 text-purple-500 mr-2" />
+                            <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap flex-1 w-0">
+                              {appt.clientName}
+                            </span>
+                          </div>
+                          {/* Email */}
+                          <div className="flex items-center min-w-0">
+                            <Mail className="h-4 w-4 text-purple-500 mr-2" />
+                            <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap flex-1 w-0">
+                              {appt.clientEmail}
+                            </span>
+                          </div>
+                          {/* Teléfono */}
+                          <div className="flex items-center min-w-0">
+                            <Phone className="h-4 w-4 text-purple-500 mr-2" />
+                            <span>{appt.clientPhone}</span>
+                          </div>
+                          {/* Tipo de Consulta */}
+                          <div className="flex items-center col-span-full min-w-0">
+                            <Info className="h-4 w-4 text-purple-500 mr-2" />
+                            <span>
+                              Tipo:{" "}
+                              {appt.consultationType === "ingreso"
+                                ? "Ingreso"
+                                : "Seguimiento"}
+                            </span>
+                          </div>
+                          {/* Notas Adicionales */}
+                          {appt.notes && (
+                            <div className="flex items-start gap-2 col-span-full min-w-0">
+                              <ClipboardList className="h-4 w-4 text-purple-500 mt-1" />
+                              <p className="flex-1 w-0 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+                                Notas: {appt.notes}
+                              </p>
+                            </div>
+                          )}
+                          {/* Estado de la cita */}
+                          <div className="flex items-center col-span-full min-w-0">
                             {appt.status === "pendiente" && (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="bg-green-50 hover:bg-green-100 text-green-700"
-                                  onClick={() =>
-                                    handleStatusChangeClick(appt, "confirm")
-                                  }
-                                  disabled={isConfirming || isCancelling}
-                                >
-                                  <CheckCircle2 className="h-4 w-4 mr-1" />{" "}
-                                  Confirmar
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="bg-red-50 hover:bg-red-100 text-red-700"
-                                  onClick={() =>
-                                    handleStatusChangeClick(appt, "cancel")
-                                  }
-                                  disabled={isConfirming || isCancelling}
-                                >
-                                  <XCircle className="h-4 w-4 mr-1" /> Cancelar
-                                </Button>
-                              </>
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                <Clock className="h-3 w-3 mr-1" /> Pendiente
+                              </span>
                             )}
                             {appt.status === "confirmada" && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />{" "}
+                                Confirmada
+                              </span>
+                            )}
+                            {appt.status === "cancelada" && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                <XCircle className="h-3 w-3 mr-1" /> Cancelada
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap justify-end gap-2 mt-4">
+                          {appt.status === "pendiente" && (
+                            <>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="bg-blue-50 hover:bg-blue-100 text-blue-700"
-                                onClick={() => handleConvertToPatient(appt)}
+                                className="bg-green-50 hover:bg-green-100 text-green-700"
+                                onClick={() =>
+                                  handleStatusChangeClick(appt, "confirm")
+                                }
+                                disabled={isConfirming || isCancelling}
                               >
-                                <UserPlus className="h-4 w-4 mr-1" /> Agregar
-                                como Paciente
+                                <CheckCircle2 className="h-4 w-4 mr-1" />{" "}
+                                Confirmar
                               </Button>
-                            )}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="bg-red-50 hover:bg-red-100 text-red-700"
+                                onClick={() =>
+                                  handleStatusChangeClick(appt, "cancel")
+                                }
+                                disabled={isConfirming || isCancelling}
+                              >
+                                <XCircle className="h-4 w-4 mr-1" /> Cancelar
+                              </Button>
+                            </>
+                          )}
+                          {appt.status === "confirmada" && (
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleViewDetails(appt)}
+                              className="bg-blue-50 hover:bg-blue-100 text-blue-700"
+                              onClick={() => handleConvertToPatient(appt)}
                             >
-                              <Eye className="h-4 w-4 mr-1" /> Ver Detalles
+                              <UserPlus className="h-4 w-4 mr-1" /> Agregar como
+                              Paciente
                             </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditAppointment(appt)}
-                            >
-                              <Pencil className="h-4 w-4 mr-1" /> Editar
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleDeleteClick(appt)}
-                            >
-                              <Trash className="h-4 w-4 mr-1" /> Eliminar
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )
-                  )}
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewDetails(appt)}
+                          >
+                            <Eye className="h-4 w-4 mr-1" /> Ver Detalles
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditAppointment(appt)}
+                          >
+                            <Pencil className="h-4 w-4 mr-1" /> Editar
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteClick(appt)}
+                          >
+                            <Trash className="h-4 w-4 mr-1" /> Eliminar
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               )}
             </CardContent>

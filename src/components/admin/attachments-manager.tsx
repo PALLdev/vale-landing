@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Download, Eye, Trash2, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,11 +44,7 @@ export function AttachmentsManager({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [viewingPdf, setViewingPdf] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadAttachments();
-  }, [medicalRecordId]);
-
-  const loadAttachments = async () => {
+  const loadAttachments = useCallback(async () => {
     try {
       setLoading(true);
       const data = await getAttachmentsByMedicalRecord(medicalRecordId);
@@ -59,7 +55,11 @@ export function AttachmentsManager({
     } finally {
       setLoading(false);
     }
-  };
+  }, [medicalRecordId]);
+
+  useEffect(() => {
+    loadAttachments();
+  }, [loadAttachments]);
 
   const handleDownload = async (attachment: MedicalRecordAttachment) => {
     try {
