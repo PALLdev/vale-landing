@@ -45,46 +45,49 @@ export function FileUploadDropzone({
     return file;
   };
 
-  const processFiles = async (newFiles: File[]) => {
-    setIsProcessing(true);
-    setProcessingProgress(0);
+  const processFiles = useCallback(
+    async (newFiles: File[]) => {
+      setIsProcessing(true);
+      setProcessingProgress(0);
 
-    const processedFiles: FileWithPreview[] = [];
+      const processedFiles: FileWithPreview[] = [];
 
-    for (let i = 0; i < newFiles.length; i++) {
-      const file = newFiles[i];
-      const fileWithPreview: FileWithPreview = {
-        ...file,
-        id: `${Date.now()}-${i}`,
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        lastModified: file.lastModified,
-      } as FileWithPreview;
+      for (let i = 0; i < newFiles.length; i++) {
+        const file = newFiles[i];
+        const fileWithPreview: FileWithPreview = {
+          ...file,
+          id: `${Date.now()}-${i}`,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          lastModified: file.lastModified,
+        } as FileWithPreview;
 
-      const error = validateFile(file);
-      if (error) {
-        fileWithPreview.error = error;
-      } else {
-        try {
-          // Compress the file
-          const compressedFile = await compressFile(file);
-          fileWithPreview.compressed = compressedFile;
-        } catch (err) {
-          fileWithPreview.error = "Error al procesar el archivo";
+        const error = validateFile(file);
+        if (error) {
+          fileWithPreview.error = error;
+        } else {
+          try {
+            // Compress the file
+            const compressedFile = await compressFile(file);
+            fileWithPreview.compressed = compressedFile;
+          } catch {
+            fileWithPreview.error = "Error al procesar el archivo";
+          }
         }
+
+        processedFiles.push(fileWithPreview);
+        setProcessingProgress(((i + 1) / newFiles.length) * 100);
       }
 
-      processedFiles.push(fileWithPreview);
-      setProcessingProgress(((i + 1) / newFiles.length) * 100);
-    }
-
-    const updatedFiles = [...files, ...processedFiles].slice(0, maxFiles);
-    setFiles(updatedFiles);
-    onFilesChange(updatedFiles);
-    setIsProcessing(false);
-    setProcessingProgress(0);
-  };
+      const updatedFiles = [...files, ...processedFiles].slice(0, maxFiles);
+      setFiles(updatedFiles);
+      onFilesChange(updatedFiles);
+      setIsProcessing(false);
+      setProcessingProgress(0);
+    },
+    [files, maxFiles, onFilesChange]
+  ); // added processFiles dependencies
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -98,7 +101,7 @@ export function FileUploadDropzone({
         processFiles(droppedFiles);
       }
     },
-    [disabled, files, maxFiles]
+    [disabled, processFiles] // replaced files and maxFiles with processFiles dependency
   );
 
   const handleDragOver = useCallback(

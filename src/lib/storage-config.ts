@@ -13,7 +13,7 @@ export const STORAGE_PATHS = {
 // Helper function to generate file path
 export function generateFilePath(medicalRecordId: string, originalFileName: string): string {
     const timestamp = Date.now()
-    const fileExtension = originalFileName.split(".").pop()
+    // const fileExtension = originalFileName.split(".").pop()
     const sanitizedName = originalFileName.replace(/[^a-zA-Z0-9.-]/g, "_").substring(0, 50)
 
     return `${STORAGE_PATHS.MEDICAL_RECORDS}/${medicalRecordId}_${timestamp}_${sanitizedName}`

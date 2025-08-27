@@ -238,8 +238,8 @@ export function AttachmentsManager({
                               ¿Eliminar archivo?
                             </AlertDialogTitle>
                             <AlertDialogDescription>
-                              Esta acción no se puede deshacer. El archivo "
-                              {attachment.file_name}" será eliminado
+                              Esta acción no se puede deshacer. El archivo
+                              &quot;{attachment.file_name}&quot; será eliminado
                               permanentemente.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
