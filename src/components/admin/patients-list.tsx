@@ -111,7 +111,7 @@ export function PatientsList() {
         </div>
         <Button
           onClick={() => setIsAddModalOpen(true)}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 bg-[var(--color-prim)] hover:bg-[var(--color-prim-dark)]"
         >
           <Plus className="h-4 w-4" />
           Agregar Paciente

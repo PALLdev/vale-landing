@@ -153,6 +153,26 @@ export async function updateMedicalRecord(id: string, recordData: UpdateMedicalR
 export async function deleteMedicalRecord(id: string): Promise<void> {
     const supabase = await createServerSupabaseClient()
 
+    try {
+        // Import the attachments functions
+        const { getAttachmentsByMedicalRecord, deleteAttachment } = await import("./attachments")
+
+        // Get all attachments for this medical record
+        const attachments = await getAttachmentsByMedicalRecord(id)
+
+        // Delete each attachment (this will remove both the file from storage and the database record)
+        for (const attachment of attachments) {
+            const result = await deleteAttachment(attachment.id)
+            if (!result.success) {
+                console.error(`Failed to delete attachment ${attachment.id}:`, result.message)
+                // Continue with other attachments even if one fails
+            }
+        }
+    } catch (attachmentError) {
+        console.error("Error deleting attachments:", attachmentError)
+        // Don't throw here - we still want to try to delete the medical record
+    }
+
     const { error } = await supabase.from("medical_records").delete().eq("id", id)
 
     if (error) {

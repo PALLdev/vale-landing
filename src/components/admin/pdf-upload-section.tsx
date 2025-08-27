@@ -1,7 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useState, forwardRef, useImperativeHandle } from "react";
+
 import { Upload, CheckCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
@@ -20,9 +20,13 @@ interface FileWithPreview extends File {
 interface PdfUploadSectionProps {
   medicalRecordId: string;
   onUploadComplete?: () => void;
+  onFilesAdded?: (hasFiles: boolean) => void;
 }
 
-export function PdfUploadSection({ medicalRecordId }: PdfUploadSectionProps) {
+export const PdfUploadSection = forwardRef<
+  { handleUpload: () => Promise<boolean> },
+  PdfUploadSectionProps
+>(({ medicalRecordId, onUploadComplete, onFilesAdded }, ref) => {
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -36,14 +40,16 @@ export function PdfUploadSection({ medicalRecordId }: PdfUploadSectionProps) {
             existing.name === newFile.name && existing.size === newFile.size
         )
     );
-    setFiles([...existingFiles, ...newUniqueFiles]);
+    const updatedFiles = [...existingFiles, ...newUniqueFiles];
+    setFiles(updatedFiles);
+
+    onFilesAdded?.(updatedFiles.length > 0);
   };
 
-  const handleUpload = async () => {
+  const handleUpload = async (): Promise<boolean> => {
     const validFiles = files.filter((f) => !f.error && !f.uploaded);
     if (validFiles.length === 0) {
-      toast.error("No hay archivos nuevos para subir");
-      return;
+      return true; // No files to upload is considered success
     }
 
     setUploading(true);
@@ -61,7 +67,9 @@ export function PdfUploadSection({ medicalRecordId }: PdfUploadSectionProps) {
           errorCount++;
           continue;
         }
+
         const compressedFile = await compressPDF(file);
+
         const result = await uploadAttachment(
           medicalRecordId,
           file,
@@ -105,11 +113,15 @@ export function PdfUploadSection({ medicalRecordId }: PdfUploadSectionProps) {
         } subir`
       );
     }
+
+    return errorCount === 0; // Return true if all uploads succeeded
   };
 
+  useImperativeHandle(ref, () => ({
+    handleUpload,
+  }));
+
   const uploadedFilesCount = files.filter((f) => f.uploaded).length;
-  const pendingFilesCount = files.filter((f) => !f.error && !f.uploaded).length;
-  const hasAnyFiles = files.length > 0;
 
   return (
     <Card>
@@ -152,29 +164,9 @@ export function PdfUploadSection({ medicalRecordId }: PdfUploadSectionProps) {
             </span>
           </div>
         )}
-
-        {pendingFilesCount > 0 && !uploading && hasAnyFiles && (
-          <div className="flex items-center justify-between pt-4 border-t">
-            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-              <CheckCircle className="w-4 h-4 text-[var(--color-prim)]" />
-              <span>
-                {pendingFilesCount} archivo{pendingFilesCount !== 1 ? "s" : ""}{" "}
-                listo
-                {pendingFilesCount !== 1 ? "s" : ""} para subir
-              </span>
-            </div>
-
-            <Button
-              onClick={handleUpload}
-              disabled={uploading || pendingFilesCount === 0}
-              className="bg-[var(--color-prim)] hover:bg-[var(--color-prim-dark)] text-white"
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              Subir Archivo{pendingFilesCount !== 1 ? "s" : ""}
-            </Button>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
-}
+});
+
+PdfUploadSection.displayName = "PdfUploadSection";

@@ -50,7 +50,7 @@ export function PendingAppointmentsIndicator({
   if (pendingAppointments.length === 0) {
     return (
       <Card className="border-green-200 bg-green-50">
-        <CardContent className="p-4">
+        <CardContent className="px-4">
           <div className="flex items-center gap-2 text-green-700">
             <CheckCircle2 className="h-5 w-5" />
             <span className="font-medium">

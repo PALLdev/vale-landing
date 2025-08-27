@@ -86,7 +86,9 @@ export function AttachmentsManager({
   const handleView = async (attachment: MedicalRecordAttachment) => {
     try {
       const viewUrl = await getAttachmentDownloadUrl(attachment.file_path);
+
       if (viewUrl) {
+        // Try direct URL without parameters first
         setViewingPdf(viewUrl);
       } else {
         throw new Error("No se pudo generar la URL de visualización");
@@ -265,24 +267,54 @@ export function AttachmentsManager({
 
       {/* PDF Viewer Dialog */}
       <Dialog open={!!viewingPdf} onOpenChange={() => setViewingPdf(null)}>
-        <DialogContent className="max-w-4xl w-full h-[80vh] p-0">
-          <DialogHeader className="p-6 pb-0">
-            <DialogTitle>Visualizar PDF</DialogTitle>
+        <DialogContent className="max-w-6xl w-full p-0">
+          <DialogHeader className="p-6 pb-4 border-b bg-gradient-to-r from-[var(--color-prim-very-lighter)] to-[var(--color-prim-lighter)]/20">
+            <DialogTitle className="text-xl font-semibold text-[var(--color-prim)] flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Visualizar PDF
+            </DialogTitle>
           </DialogHeader>
-          <div className="flex-1 p-6 pt-0">
+          <div className="flex-1 p-4 relative">
             {viewingPdf ? (
-              <iframe
-                src={viewingPdf}
-                className="w-full h-full border rounded-lg"
-                title="PDF Viewer"
-                onError={() => {
-                  toast.error("No se pudo cargar el PDF para visualización");
-                  setViewingPdf(null);
-                }}
-              />
+              <div className="w-full h-full bg-gray-100 rounded-lg overflow-hidden border-2 border-[var(--color-prim-lighter)]">
+                <iframe
+                  src={viewingPdf}
+                  className="w-full h-full"
+                  title="PDF Viewer"
+                  style={{ minHeight: "600px" }}
+                  // onLoad={(e) => {
+                  //   console.log("[v0] PDF iframe loaded");
+                  //   // Check if iframe content is actually a PDF
+                  //   try {
+                  //     const iframe = e.target as HTMLIFrameElement;
+                  //     console.log("[v0] Iframe src:", iframe.src);
+                  //   } catch (err) {
+                  //     console.log("[v0] Cannot access iframe content:", err);
+                  //   }
+                  // }}
+                  onError={(e) => {
+                    toast.error("No se pudo cargar el PDF en el visor");
+                  }}
+                />
+                <div className="absolute bottom-4 right-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(viewingPdf, "_blank")}
+                    className="bg-white/90 hover:bg-white border-[var(--color-prim)] text-[var(--color-prim)] hover:text-[var(--color-prim)]"
+                  >
+                    Abrir en nueva pestaña
+                  </Button>
+                </div>
+              </div>
             ) : (
-              <div className="flex items-center justify-center h-full">
-                <Loader2 className="w-8 h-8 animate-spin text-[var(--color-prim)]" />
+              <div className="flex items-center justify-center h-full bg-[var(--color-prim-very-lighter)]/30 rounded-lg">
+                <div className="text-center">
+                  <Loader2 className="w-8 h-8 animate-spin text-[var(--color-prim)] mx-auto mb-2" />
+                  <p className="text-[var(--color-prim)] font-medium">
+                    Cargando PDF...
+                  </p>
+                </div>
               </div>
             )}
           </div>

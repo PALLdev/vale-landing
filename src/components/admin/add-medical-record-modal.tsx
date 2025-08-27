@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,6 +50,9 @@ export function AddMedicalRecordModal({
   const [error, setError] = useState("");
   const [createdRecordId, setCreatedRecordId] = useState<string | null>(null);
   const [showFileUpload, setShowFileUpload] = useState(false);
+  const [hasFilesAdded, setHasFilesAdded] = useState(false);
+  const pdfUploadRef = useRef<{ handleUpload: () => Promise<boolean> }>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const formatRut = (rut: string) => {
     const cleaned = rut.replace(/[^0-9kK]/g, "");
@@ -64,6 +67,7 @@ export function AddMedicalRecordModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     setIsLoading(true);
     setError("");
 
@@ -88,7 +92,7 @@ export function AddMedicalRecordModal({
         observations: "",
       });
     } catch (error) {
-      console.error("[v0] Error creating medical record:", error);
+      console.error("Error creating medical record:", error);
       setError(
         error instanceof Error ? error.message : "Error al crear ficha médica"
       );
@@ -109,18 +113,38 @@ export function AddMedicalRecordModal({
       setError("");
       setCreatedRecordId(null);
       setShowFileUpload(false);
+      setHasFilesAdded(false);
       onClose();
     }
   };
 
-  const handleFileUploadComplete = () => {
-    onSuccess();
-    handleClose();
+  const handleFileUploadComplete = async () => {
+    if (hasFilesAdded && pdfUploadRef.current) {
+      setIsUploading(true);
+      try {
+        const uploadSuccess = await pdfUploadRef.current.handleUpload();
+        if (uploadSuccess) {
+          onSuccess();
+          handleClose();
+        }
+      } catch (error) {
+        console.error("Error uploading files:", error);
+      } finally {
+        setIsUploading(false);
+      }
+    } else {
+      onSuccess();
+      handleClose();
+    }
   };
 
   const handleSkipFileUpload = () => {
     onSuccess();
     handleClose();
+  };
+
+  const handleFilesAdded = (hasFiles: boolean) => {
+    setHasFilesAdded(hasFiles);
   };
 
   return (
@@ -255,8 +279,8 @@ export function AddMedicalRecordModal({
                 ¡Ficha médica creada exitosamente!
               </p>
               <p className="text-sm text-muted-foreground mt-1">
-                Ahora puedes agregar archivos PDF como exámenes, recetas o
-                informes (opcional)
+                Puedes agregar archivos PDF como exámenes, recetas o informes.
+                Se subirán al presionar Finalizar.
               </p>
             </div>
 
@@ -264,8 +288,10 @@ export function AddMedicalRecordModal({
 
             {createdRecordId && (
               <PdfUploadSection
+                ref={pdfUploadRef}
                 medicalRecordId={createdRecordId}
                 onUploadComplete={handleFileUploadComplete}
+                onFilesAdded={handleFilesAdded}
               />
             )}
 
@@ -275,6 +301,7 @@ export function AddMedicalRecordModal({
                 variant="outline"
                 onClick={handleSkipFileUpload}
                 className="flex-1 bg-transparent"
+                disabled={hasFilesAdded || isUploading}
               >
                 Omitir y Finalizar
               </Button>
@@ -282,8 +309,13 @@ export function AddMedicalRecordModal({
                 type="button"
                 onClick={handleFileUploadComplete}
                 className="flex-1 bg-[var(--color-prim)] hover:bg-[var(--color-prim-dark)] text-white"
+                disabled={isUploading}
               >
-                Finalizar
+                {isUploading
+                  ? "Subiendo..."
+                  : hasFilesAdded
+                  ? "Subir y Finalizar"
+                  : "Finalizar"}
               </Button>
             </div>
           </div>

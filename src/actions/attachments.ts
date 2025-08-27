@@ -2,6 +2,7 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server"
 import { z } from "zod"
 import { deleteAttachmentSchema, fileSchema, preUploadAttachmentSchema } from "@/schemas/attachment"
+import { compressPDF as compressPDFUtil } from "@/lib/pdf-compression"
 
 export interface MedicalRecordAttachment {
     id: string
@@ -30,12 +31,7 @@ export async function uploadAttachment(
 
         const {
             data: { user },
-            error: authError,
         } = await supabase.auth.getUser()
-        console.log("[v0] Authentication check:", {
-            user: user ? { id: user.id, email: user.email } : null,
-            authError: authError?.message,
-        })
 
         if (!user) {
             return {
@@ -73,11 +69,19 @@ export async function uploadAttachment(
 
         const fileToUpload = compressedFile || file
 
-        // Generate unique file path
+        // Verify the file is actually a File object and not JSON
+        if (!(fileToUpload instanceof File)) {
+            console.error("fileToUpload is not a File object:", typeof fileToUpload, fileToUpload)
+            return {
+                success: false,
+                error: "Error interno: archivo no válido para subida",
+            }
+        }
+
         const timestamp = Date.now()
         const fileExtension = file.name.split(".").pop()
         const fileName = `${medicalRecordId}_${timestamp}.${fileExtension}`
-        const filePath = `fichas-medicas/${fileName}`
+        const filePath = fileName
 
         // Upload file to Supabase Storage
         const { data: uploadData, error: uploadError } = await supabase.storage
@@ -95,16 +99,6 @@ export async function uploadAttachment(
             }
         }
 
-        // Create database record
-        console.log("[v0] Attempting database insert with:", {
-            medical_record_id: medicalRecordId,
-            file_name: file.name,
-            file_path: uploadData.path,
-            file_size: fileToUpload.size,
-            mime_type: file.type,
-            user_id: user.id,
-        })
-
         const { data: attachmentData, error: dbError } = await supabase
             .from("medical_record_attachments")
             .insert({
@@ -120,7 +114,7 @@ export async function uploadAttachment(
         if (dbError) {
             // If database insert fails, clean up uploaded file
             await supabase.storage.from("fichas-medicas").remove([uploadData.path])
-            console.error("[v0] Database error details:", {
+            console.error("Database error details:", {
                 message: dbError.message,
                 code: dbError.code,
                 details: dbError.details,
@@ -260,11 +254,15 @@ export async function deleteAttachment(attachmentId: string): Promise<{ success:
     }
 }
 
-// Compress PDF file (placeholder - would need pdf-lib or similar)
+// Compress PDF file
 export async function compressPDF(file: File): Promise<File> {
     try {
-        await new Promise((resolve) => setTimeout(resolve, 100))
-        return file
+        const compressedFile = await compressPDFUtil(file, {
+            quality: 0.7,
+            removeMetadata: true,
+            optimizeImages: true,
+        })
+        return compressedFile
     } catch (error) {
         console.error("Error compressing PDF:", error)
         return file

@@ -6,6 +6,7 @@ import { Upload, X, FileText, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { validateFile as validateFileUtil } from "@/lib/validate-file";
+import { compressPDF } from "@/lib/pdf-compression";
 
 interface FileWithPreview extends File {
   id: string;
@@ -40,9 +41,18 @@ export function FileUploadDropzone({
   };
 
   const compressFile = async (file: File): Promise<File> => {
-    // For now, return the original file
-    // In a real implementation, you would use pdf-lib or similar to compress
-    return file;
+    try {
+      const compressed = await compressPDF(file, {
+        quality: 0.7,
+        removeMetadata: true,
+        optimizeImages: true,
+      });
+
+      return compressed;
+    } catch (error) {
+      console.error("File compression failed:", error);
+      return file;
+    }
   };
 
   const processFiles = useCallback(
@@ -54,14 +64,9 @@ export function FileUploadDropzone({
 
       for (let i = 0; i < newFiles.length; i++) {
         const file = newFiles[i];
-        const fileWithPreview: FileWithPreview = {
-          ...file,
+        const fileWithPreview = Object.assign(file, {
           id: `${Date.now()}-${i}`,
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          lastModified: file.lastModified,
-        } as FileWithPreview;
+        }) as FileWithPreview;
 
         const error = validateFile(file);
         if (error) {
