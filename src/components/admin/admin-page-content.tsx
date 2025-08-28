@@ -1,5 +1,6 @@
 "use client";
-import { useRef, useCallback, useState } from "react";
+import { useRef, useCallback, useState, useEffect } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useCalendarLogic } from "@/hooks/use-calendar-logic";
 import { CalendarGrid } from "@/components/calendar/calendar-grid";
 import { AppointmentsList } from "@/components/admin/appointments-list";
@@ -46,7 +47,30 @@ export function AdminCalendarPageContent() {
   const [initialBookingDate, setInitialBookingDate] = useState<
     Date | undefined
   >(undefined);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const [activeTab, setActiveTab] = useState("calendar");
+
+  useEffect(() => {
+    const tabFromUrl = searchParams.get("tab");
+    if (
+      tabFromUrl &&
+      (tabFromUrl === "calendar" || tabFromUrl === "patients")
+    ) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = useCallback(
+    (newTab: string) => {
+      setActiveTab(newTab);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("tab", newTab);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [searchParams, router, pathname]
+  );
 
   const handleDateSelectAndScroll = (date: Date) => {
     handleDateSelect(date);
@@ -58,17 +82,15 @@ export function AdminCalendarPageContent() {
     }
   };
 
-  // Función para recargar las citas Y los bloqueos de disponibilidad
   const refetchAppointments = useCallback(async () => {
     setIsLoadingAppointments(true);
     try {
-      // Cargar tanto las citas como los bloqueos de disponibilidad
       const [fetchedAppointments, fetchedBlocks] = await Promise.all([
         getAppointments(),
         getAvailabilityBlocks(),
       ]);
       setAppointments(fetchedAppointments);
-      setAvailabilityBlocks(fetchedBlocks); // Actualizar también los bloqueos
+      setAvailabilityBlocks(fetchedBlocks);
     } catch (error) {
       console.error("Error refetching data:", error);
     } finally {
@@ -76,7 +98,6 @@ export function AdminCalendarPageContent() {
     }
   }, [setAppointments, setIsLoadingAppointments, setAvailabilityBlocks]);
 
-  // Función para abrir el modal de agendamiento con una fecha inicial
   const handleOpenBookingModal = useCallback((date?: Date) => {
     setInitialBookingDate(date);
     setIsBookingModalOpen(true);
@@ -94,7 +115,6 @@ export function AdminCalendarPageContent() {
           description: `La cita de ${appointment.clientName} ha sido confirmada exitosamente.`,
         });
 
-        // Send WhatsApp notification
         const formattedDate = format(appointment.date, "dd MMMM yyyy", {
           locale: es,
         });
@@ -134,7 +154,6 @@ export function AdminCalendarPageContent() {
           description: `La cita de ${appointment.clientName} ha sido cancelada exitosamente.`,
         });
 
-        // Send WhatsApp notification
         const formattedDate = format(appointment.date, "dd MMMM yyyy", {
           locale: es,
         });
@@ -155,9 +174,7 @@ export function AdminCalendarPageContent() {
   };
 
   const handleViewFromIndicator = (appointment: Appointment) => {
-    // Find the date and select it to show the appointment in the list
     handleDateSelect(appointment.date);
-    // Scroll to appointments list
     if (appointmentsListRef.current) {
       appointmentsListRef.current.scrollIntoView({
         behavior: "smooth",
@@ -177,8 +194,12 @@ export function AdminCalendarPageContent() {
 
   return (
     <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20 p-1 rounded-xl border border-purple-100 dark:border-purple-800/30 shadow-sm">
+      <Tabs
+        value={activeTab}
+        onValueChange={handleTabChange}
+        className="w-full"
+      >
+        <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-purple-50 to-fuchsia-50 dark:from-purple-950/20 dark:to-indigo-950/20 p-1 rounded-xl border border-purple-100 dark:border-purple-800/30 shadow-sm">
           <TabsTrigger
             value="calendar"
             className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-purple-700 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-purple-200 dark:data-[state=active]:bg-purple-900/50 dark:data-[state=active]:text-purple-100 dark:data-[state=active]:border-purple-700 text-purple-600 dark:text-purple-300 hover:text-purple-700 dark:hover:text-purple-200 transition-all duration-200 font-medium rounded-lg"
@@ -234,7 +255,7 @@ export function AdminCalendarPageContent() {
               showAppointmentIndicator={true}
               maxSelectableDate={maxSelectableDate}
               availabilityBlocks={availabilityBlocks}
-              isAdminView={true} // Pasar isAdminView como true
+              isAdminView={true}
             />
 
             <div className="space-y-8 scroll-mt-20" ref={appointmentsListRef}>

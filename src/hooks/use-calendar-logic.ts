@@ -139,8 +139,8 @@ export function useCalendarLogic(isAdminView = false) {
     }, [])
 
     const availableTimeSlots = useMemo(
-        () => generateTimeSlots(selectedDate, appointments, availabilityBlocks),
-        [selectedDate, appointments, availabilityBlocks],
+        () => generateTimeSlots(selectedDate, appointments, availabilityBlocks, undefined, isAdminView), // Added isAdminView parameter
+        [selectedDate, appointments, availabilityBlocks, isAdminView], // Added isAdminView to dependencies
     )
 
     // Validación del formulario en el cliente usando Zod
@@ -336,7 +336,7 @@ export function useCalendarLogic(isAdminView = false) {
         format,
         es,
         isDayFullyBooked: (date: Date, allAppointments: Appointment[]) =>
-            isDayFullyBooked(date, allAppointments, availabilityBlocks),
+            isDayFullyBooked(date, allAppointments, availabilityBlocks, isAdminView), // Added isAdminView parameter
         setAppointments,
         setIsLoadingAppointments,
         maxSelectableDate, // Exportar maxSelectableDate

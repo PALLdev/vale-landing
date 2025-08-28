@@ -1,6 +1,6 @@
-import { isSameDay, setHours, setMinutes, isPast, isToday, format, getDay } from "date-fns"
+import { isSameDay, setHours, setMinutes, isPast, isToday, format, getDay, addHours } from "date-fns"
 import type { Appointment, TimeSlot } from "@/types/calendar"
-import type { AvailabilityBlock } from "@/types/availability";
+import type { AvailabilityBlock } from "@/types/availability"
 
 /**
  * Generates time slots for a given date, excluding a break from 1 PM to 2 PM,
@@ -10,6 +10,7 @@ import type { AvailabilityBlock } from "@/types/availability";
  * @param appointments An array of existing appointments.
  * @param availabilityBlocks An array of availability blocks set by admin.
  * @param excludeAppointmentId Optional ID of an appointment to exclude from the check.
+ * @param isAdminView Optional flag to indicate if this is for admin view (bypasses 2-hour anticipation rule).
  * @returns An array of TimeSlot objects.
  */
 export function generateTimeSlots(
@@ -17,6 +18,7 @@ export function generateTimeSlots(
     appointments: Appointment[],
     availabilityBlocks: AvailabilityBlock[] = [],
     excludeAppointmentId?: string,
+    isAdminView = false, // Added isAdminView parameter
 ): TimeSlot[] {
     if (!date) {
         return []
@@ -59,6 +61,9 @@ export function generateTimeSlots(
         return timeSlots
     }
 
+    const now = new Date()
+    const twoHoursFromNow = addHours(now, 2)
+
     for (let hour = startHour; hour < endHour; hour++) {
         // Skip the break time
         if (hour >= breakStartHour && hour < breakEndHour) {
@@ -68,8 +73,14 @@ export function generateTimeSlots(
         const slotDateTime = setMinutes(setHours(date, hour), 0)
         const slotTime = format(slotDateTime, "HH:mm")
 
-        // Check if the slot is in the past for today's date
-        const isSlotPast = isSelectedDateToday && isPast(slotDateTime)
+        let isSlotPast = false
+        if (isAdminView) {
+            // Admin view: only check if the slot is actually in the past (no 2-hour anticipation rule)
+            isSlotPast = isSelectedDateToday && isPast(slotDateTime)
+        } else {
+            // Public view: check if slot is in the past OR within 2 hours from now
+            isSlotPast = isSelectedDateToday && (isPast(slotDateTime) || slotDateTime <= twoHoursFromNow)
+        }
 
         // Check if the slot is already booked, excluding the appointment being edited
         const isBooked = appointments.some(
@@ -97,14 +108,16 @@ export function generateTimeSlots(
  * @param date The date to check.
  * @param allAppointments All existing appointments.
  * @param availabilityBlocks All availability blocks.
+ * @param isAdminView Optional flag to indicate if this is for admin view.
  * @returns True if the day is fully booked, false otherwise.
  */
 export function isDayFullyBooked(
     date: Date,
     allAppointments: Appointment[],
     availabilityBlocks: AvailabilityBlock[] = [],
+    isAdminView = false, // Added isAdminView parameter
 ): boolean {
-    const potentialSlots = generateTimeSlots(date, allAppointments, availabilityBlocks)
+    const potentialSlots = generateTimeSlots(date, allAppointments, availabilityBlocks, undefined, isAdminView) // Added isAdminView parameter
     // A day is fully booked if all its potential slots are marked as not available
     // or if there are no potential slots (e.g., Sundays, past days where all are unavailable).
     return potentialSlots.length > 0 && potentialSlots.every((slot) => !slot.isAvailable)
