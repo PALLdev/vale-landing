@@ -5,7 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Edit, Trash2, User, FileText } from "lucide-react";
+import {
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  User,
+  FileText,
+  Loader2,
+} from "lucide-react"; // agregado Loader2 import
 import {
   getPatients,
   searchPatients,
@@ -90,7 +98,7 @@ export function PatientsList() {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <Loader2 className="h-8 w-8 animate-spin text-purple-600 mx-auto mb-4" />
           <p className="text-gray-600">Cargando pacientes...</p>
         </div>
       </div>

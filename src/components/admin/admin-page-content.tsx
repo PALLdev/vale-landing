@@ -178,12 +178,18 @@ export function AdminCalendarPageContent() {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="calendar" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20 p-1 rounded-xl border border-purple-100 dark:border-purple-800/30 shadow-sm">
+          <TabsTrigger
+            value="calendar"
+            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-purple-700 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-purple-200 dark:data-[state=active]:bg-purple-900/50 dark:data-[state=active]:text-purple-100 dark:data-[state=active]:border-purple-700 text-purple-600 dark:text-purple-300 hover:text-purple-700 dark:hover:text-purple-200 transition-all duration-200 font-medium rounded-lg"
+          >
             <Calendar className="h-4 w-4" />
             Calendario
           </TabsTrigger>
-          <TabsTrigger value="patients" className="flex items-center gap-2">
+          <TabsTrigger
+            value="patients"
+            className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:text-purple-700 data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-purple-200 dark:data-[state=active]:bg-purple-900/50 dark:data-[state=active]:text-purple-100 dark:data-[state=active]:border-purple-700 text-purple-600 dark:text-purple-300 hover:text-purple-700 dark:hover:text-purple-200 transition-all duration-200 font-medium rounded-lg"
+          >
             <Users className="h-4 w-4" />
             Pacientes
           </TabsTrigger>
