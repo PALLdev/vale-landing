@@ -274,29 +274,21 @@ export function AttachmentsManager({
               Visualizar PDF
             </DialogTitle>
           </DialogHeader>
-          <div className="flex-1 p-4 relative">
+          <div className="flex-1 px-4 pb-4 relative">
             {viewingPdf ? (
-              <div className="w-full h-full bg-gray-100 rounded-lg overflow-hidden border-2 border-[var(--color-prim-lighter)]">
-                <iframe
-                  src={viewingPdf}
-                  className="w-full h-full"
-                  title="PDF Viewer"
-                  style={{ minHeight: "600px" }}
-                  // onLoad={(e) => {
-                  //   console.log("[v0] PDF iframe loaded");
-                  //   // Check if iframe content is actually a PDF
-                  //   try {
-                  //     const iframe = e.target as HTMLIFrameElement;
-                  //     console.log("[v0] Iframe src:", iframe.src);
-                  //   } catch (err) {
-                  //     console.log("[v0] Cannot access iframe content:", err);
-                  //   }
-                  // }}
-                  onError={(e) => {
-                    toast.error("No se pudo cargar el PDF en el visor");
-                  }}
-                />
-                <div className="absolute bottom-4 right-4">
+              <>
+                <div className="w-full bg-gray-100 rounded-lg overflow-hidden border-2">
+                  <iframe
+                    src={viewingPdf}
+                    className="w-full h-full"
+                    title="PDF Viewer"
+                    style={{ minHeight: "600px" }}
+                    onError={(e) => {
+                      toast.error("No se pudo cargar el PDF en el visor");
+                    }}
+                  />
+                </div>
+                <div className="pt-3 flex justify-end space-x-2">
                   <Button
                     variant="outline"
                     size="sm"
@@ -306,7 +298,7 @@ export function AttachmentsManager({
                     Abrir en nueva pestaña
                   </Button>
                 </div>
-              </div>
+              </>
             ) : (
               <div className="flex items-center justify-center h-full bg-[var(--color-prim-very-lighter)]/30 rounded-lg">
                 <div className="text-center">
