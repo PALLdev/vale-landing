@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useCallback, useState, useEffect } from "react";
+import { useRef, useCallback, useState, useEffect, useMemo } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useCalendarLogic } from "@/hooks/use-calendar-logic";
 import { CalendarGrid } from "@/components/calendar/calendar-grid";
@@ -51,6 +51,7 @@ export function AdminCalendarPageContent() {
   const router = useRouter();
   const pathname = usePathname();
   const [activeTab, setActiveTab] = useState("calendar");
+  const urlUpdateTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const tabFromUrl = searchParams.get("tab");
@@ -65,12 +66,29 @@ export function AdminCalendarPageContent() {
   const handleTabChange = useCallback(
     (newTab: string) => {
       setActiveTab(newTab);
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("tab", newTab);
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+
+      // Clear existing timer
+      if (urlUpdateTimerRef.current) {
+        clearTimeout(urlUpdateTimerRef.current);
+      }
+
+      // Debounce URL update to avoid excessive router calls
+      urlUpdateTimerRef.current = setTimeout(() => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("tab", newTab);
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      }, 100);
     },
     [searchParams, router, pathname]
   );
+
+  useEffect(() => {
+    return () => {
+      if (urlUpdateTimerRef.current) {
+        clearTimeout(urlUpdateTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleDateSelectAndScroll = (date: Date) => {
     handleDateSelect(date);
@@ -103,85 +121,191 @@ export function AdminCalendarPageContent() {
     setIsBookingModalOpen(true);
   }, []);
 
-  const handleConfirmFromIndicator = async (appointmentId: string) => {
-    const response = await updateAppointmentStatus(appointmentId, "confirmada");
-
-    if (response.success) {
-      const appointment = appointments.find(
-        (appt) => appt.id === appointmentId
+  const handleConfirmFromIndicator = useCallback(
+    async (appointmentId: string) => {
+      const response = await updateAppointmentStatus(
+        appointmentId,
+        "confirmada"
       );
-      if (appointment) {
-        toast.success("Cita Confirmada", {
-          description: `La cita de ${appointment.clientName} ha sido confirmada exitosamente.`,
-        });
 
-        const formattedDate = format(appointment.date, "dd MMMM yyyy", {
-          locale: es,
-        });
-        const message = encodeURIComponent(
-          `¡Hola ${
-            appointment.clientName
-          }!\n\nTu cita nutricional ha sido *CONFIRMADA*.\n\n*Detalles:*\nFecha: ${formattedDate}\nHora: ${
-            appointment.time
-          }\nTipo: ${
-            appointment.consultationType === "ingreso"
-              ? "Ingreso"
-              : "Seguimiento"
-          }\n\n¡Te esperamos!`
+      if (response.success) {
+        const appointment = appointments.find(
+          (appt) => appt.id === appointmentId
         );
-        const whatsappLink = `https://wa.me/${appointment.clientPhone}?text=${message}`;
-        window.open(whatsappLink, "_blank");
+        if (appointment) {
+          toast.success("Cita Confirmada", {
+            description: `La cita de ${appointment.clientName} ha sido confirmada exitosamente.`,
+          });
+
+          const formattedDate = format(appointment.date, "dd MMMM yyyy", {
+            locale: es,
+          });
+          const message = encodeURIComponent(
+            `¡Hola ${
+              appointment.clientName
+            }!\n\nTu cita nutricional ha sido *CONFIRMADA*.\n\n*Detalles:*\nFecha: ${formattedDate}\nHora: ${
+              appointment.time
+            }\nTipo: ${
+              appointment.consultationType === "ingreso"
+                ? "Ingreso"
+                : "Seguimiento"
+            }\n\n¡Te esperamos!`
+          );
+          const whatsappLink = `https://wa.me/${appointment.clientPhone}?text=${message}`;
+          window.open(whatsappLink, "_blank");
+        }
+
+        refetchAppointments();
+      } else {
+        toast.error("Error al Confirmar Cita", {
+          description:
+            response.message ||
+            "No se pudo confirmar la cita. Intenta de nuevo.",
+        });
       }
+    },
+    [appointments, format, es, refetchAppointments]
+  );
 
-      refetchAppointments();
-    } else {
-      toast.error("Error al Confirmar Cita", {
-        description:
-          response.message || "No se pudo confirmar la cita. Intenta de nuevo.",
-      });
-    }
-  };
-
-  const handleCancelFromIndicator = async (appointmentId: string) => {
-    const response = await updateAppointmentStatus(appointmentId, "cancelada");
-
-    if (response.success) {
-      const appointment = appointments.find(
-        (appt) => appt.id === appointmentId
+  const handleCancelFromIndicator = useCallback(
+    async (appointmentId: string) => {
+      const response = await updateAppointmentStatus(
+        appointmentId,
+        "cancelada"
       );
-      if (appointment) {
-        toast.success("Cita Cancelada", {
-          description: `La cita de ${appointment.clientName} ha sido cancelada exitosamente.`,
-        });
 
-        const formattedDate = format(appointment.date, "dd MMMM yyyy", {
-          locale: es,
-        });
-        const message = encodeURIComponent(
-          `¡Hola ${appointment.clientName}!\n\nTu cita nutricional para el ${formattedDate} a las ${appointment.time} ha sido *CANCELADA*.\n\nSi deseas reagendar, por favor visita nuestra página de agendamiento.`
+      if (response.success) {
+        const appointment = appointments.find(
+          (appt) => appt.id === appointmentId
         );
-        const whatsappLink = `https://wa.me/${appointment.clientPhone}?text=${message}`;
-        window.open(whatsappLink, "_blank");
+        if (appointment) {
+          toast.success("Cita Cancelada", {
+            description: `La cita de ${appointment.clientName} ha sido cancelada exitosamente.`,
+          });
+
+          const formattedDate = format(appointment.date, "dd MMMM yyyy", {
+            locale: es,
+          });
+          const message = encodeURIComponent(
+            `¡Hola ${appointment.clientName}!\n\nTu cita nutricional para el ${formattedDate} a las ${appointment.time} ha sido *CANCELADA*.\n\nSi deseas reagendar, por favor visita nuestra página de agendamiento.`
+          );
+          const whatsappLink = `https://wa.me/${appointment.clientPhone}?text=${message}`;
+          window.open(whatsappLink, "_blank");
+        }
+
+        refetchAppointments();
+      } else {
+        toast.error("Error al Cancelar Cita", {
+          description:
+            response.message ||
+            "No se pudo cancelar la cita. Intenta de nuevo.",
+        });
       }
+    },
+    [appointments, format, es, refetchAppointments]
+  );
 
-      refetchAppointments();
-    } else {
-      toast.error("Error al Cancelar Cita", {
-        description:
-          response.message || "No se pudo cancelar la cita. Intenta de nuevo.",
-      });
-    }
-  };
+  const handleViewFromIndicator = useCallback(
+    (appointment: Appointment) => {
+      handleDateSelect(appointment.date);
+      if (appointmentsListRef.current) {
+        appointmentsListRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+    },
+    [handleDateSelect]
+  );
 
-  const handleViewFromIndicator = (appointment: Appointment) => {
-    handleDateSelect(appointment.date);
-    if (appointmentsListRef.current) {
-      appointmentsListRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }
-  };
+  const calendarContent = useMemo(
+    () => (
+      <>
+        <div className="mb-6">
+          <PendingAppointmentsIndicator
+            appointments={appointments}
+            onConfirmAppointment={handleConfirmFromIndicator}
+            onCancelAppointment={handleCancelFromIndicator}
+            onViewAppointment={handleViewFromIndicator}
+          />
+        </div>
+
+        <div className="flex justify-end mb-6">
+          <Button
+            onClick={() => handleOpenBookingModal()}
+            className="bg-purple-600 hover:bg-purple-700 text-white"
+          >
+            <PlusCircle className="mr-2 h-4 w-4" /> Agendar Nueva Cita
+          </Button>
+        </div>
+
+        <div className="grid lg:grid-cols-[2fr_1fr] gap-8">
+          <CalendarGrid
+            currentMonth={currentMonth}
+            selectedDate={selectedDate}
+            daysInMonth={daysInMonth}
+            startingDayIndex={startingDayIndex}
+            daysOfWeek={daysOfWeek}
+            handlePrevMonth={handlePrevMonth}
+            handleNextMonth={handleNextMonth}
+            handleDateSelect={handleDateSelectAndScroll}
+            isPast={isPast}
+            isToday={isToday}
+            isSameDay={isSameDay}
+            format={format}
+            es={es}
+            isDayFullyBooked={isDayFullyBooked}
+            appointments={appointments}
+            showAppointmentIndicator={true}
+            maxSelectableDate={maxSelectableDate}
+            availabilityBlocks={availabilityBlocks}
+            isAdminView={true}
+          />
+
+          <div className="space-y-8 scroll-mt-20" ref={appointmentsListRef}>
+            <AppointmentsList
+              selectedDate={selectedDate}
+              appointments={appointments}
+              format={format}
+              es={es}
+              onAppointmentUpdated={refetchAppointments}
+              onBookNewAppointment={handleOpenBookingModal}
+            />
+          </div>
+        </div>
+
+        <div className="mt-8">
+          <AvailabilityManager
+            onAvailabilityChange={refetchAppointments}
+            showOnlyRecent={true}
+          />
+        </div>
+      </>
+    ),
+    [
+      appointments,
+      handleConfirmFromIndicator,
+      handleCancelFromIndicator,
+      handleViewFromIndicator,
+      handleOpenBookingModal,
+      currentMonth,
+      selectedDate,
+      daysInMonth,
+      startingDayIndex,
+      daysOfWeek,
+      handlePrevMonth,
+      handleNextMonth,
+      isPast,
+      isToday,
+      isSameDay,
+      format,
+      es,
+      isDayFullyBooked,
+      maxSelectableDate,
+      availabilityBlocks,
+      refetchAppointments,
+    ]
+  );
 
   if (isLoadingAppointments) {
     return (
@@ -217,69 +341,11 @@ export function AdminCalendarPageContent() {
         </TabsList>
 
         <TabsContent value="calendar" className="space-y-6">
-          <div className="mb-6">
-            <PendingAppointmentsIndicator
-              appointments={appointments}
-              onConfirmAppointment={handleConfirmFromIndicator}
-              onCancelAppointment={handleCancelFromIndicator}
-              onViewAppointment={handleViewFromIndicator}
-            />
-          </div>
-
-          <div className="flex justify-end mb-6">
-            <Button
-              onClick={() => handleOpenBookingModal()}
-              className="bg-purple-600 hover:bg-purple-700 text-white"
-            >
-              <PlusCircle className="mr-2 h-4 w-4" /> Agendar Nueva Cita
-            </Button>
-          </div>
-
-          <div className="grid lg:grid-cols-[2fr_1fr] gap-8">
-            <CalendarGrid
-              currentMonth={currentMonth}
-              selectedDate={selectedDate}
-              daysInMonth={daysInMonth}
-              startingDayIndex={startingDayIndex}
-              daysOfWeek={daysOfWeek}
-              handlePrevMonth={handlePrevMonth}
-              handleNextMonth={handleNextMonth}
-              handleDateSelect={handleDateSelectAndScroll}
-              isPast={isPast}
-              isToday={isToday}
-              isSameDay={isSameDay}
-              format={format}
-              es={es}
-              isDayFullyBooked={isDayFullyBooked}
-              appointments={appointments}
-              showAppointmentIndicator={true}
-              maxSelectableDate={maxSelectableDate}
-              availabilityBlocks={availabilityBlocks}
-              isAdminView={true}
-            />
-
-            <div className="space-y-8 scroll-mt-20" ref={appointmentsListRef}>
-              <AppointmentsList
-                selectedDate={selectedDate}
-                appointments={appointments}
-                format={format}
-                es={es}
-                onAppointmentUpdated={refetchAppointments}
-                onBookNewAppointment={handleOpenBookingModal}
-              />
-            </div>
-          </div>
-
-          <div className="mt-8">
-            <AvailabilityManager
-              onAvailabilityChange={refetchAppointments}
-              showOnlyRecent={true}
-            />
-          </div>
+          {calendarContent}
         </TabsContent>
 
         <TabsContent value="patients">
-          <PatientsList />
+          {activeTab === "patients" && <PatientsList />}
         </TabsContent>
       </Tabs>
 
