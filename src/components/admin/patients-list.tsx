@@ -243,7 +243,7 @@ export function PatientsList() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="text-3xl py-1 font-bold text-gray-900">
             Gestión de Pacientes
           </h2>
           <p className="text-gray-600">
