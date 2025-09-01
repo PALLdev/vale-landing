@@ -229,7 +229,7 @@ export function AppointmentsList({
           <CardContent className="text-center py-12">
             <CalendarIcon className="h-12 w-12 text-purple-400 mx-auto mb-4" />
             <p className="text-gray-500 text-lg font-medium">
-              Selecciona un día en el calendario para ver las citas agendadas.
+              Selecciona un día en el calendario para ver las citas agendadas
             </p>
           </CardContent>
         ) : (

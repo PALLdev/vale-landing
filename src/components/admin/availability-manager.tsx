@@ -555,12 +555,6 @@ export function AvailabilityManager({
             <CardTitle className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
               <Ban className="h-5 w-5 text-purple-600" />
               Gestión de Disponibilidad
-              {showOnlyRecent && availabilityBlocks.length > 3 && (
-                <span className="text-xs sm:text-sm font-normal text-gray-500 block sm:inline">
-                  (Mostrando {Math.min(3, availabilityBlocks.length)} de{" "}
-                  {availabilityBlocks.length})
-                </span>
-              )}
             </CardTitle>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               {showOnlyRecent && availabilityBlocks.length > 3 && (
@@ -591,18 +585,12 @@ export function AvailabilityManager({
         </CardHeader>
 
         <CardContent>
-          {displayedBlocks.length === 0 ? (
-            <div className="text-center py-8">
-              <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">
-                {availabilityBlocks.length === 0
-                  ? "No hay bloqueos de disponibilidad configurados."
-                  : "No hay bloqueos recientes para mostrar."}
-              </p>
-            </div>
-          ) : (
-            <BlocksList blocks={displayedBlocks} />
-          )}
+          <div className="text-center py-8">
+            <Ban className="h-12 w-12 text-purple-400 mx-auto mb-4" />
+            <p className="text-gray-500 text-lg font-medium">
+              Bloquea fechas y horarios para gestionar tu disponibilidad
+            </p>
+          </div>
         </CardContent>
       </Card>
 
